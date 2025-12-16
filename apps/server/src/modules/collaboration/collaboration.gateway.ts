@@ -1,4 +1,9 @@
-import { type JoinRoomPayload, SOCKET_EVENTS } from '@codejam/common';
+import {
+  type CodeUpdatePayload,
+  type JoinRoomPayload,
+  SOCKET_EVENTS,
+  User,
+} from '@codejam/common';
 import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
@@ -24,12 +29,16 @@ export class CollaborationGateway
   @WebSocketServer()
   server: Server;
 
+  // ==================================================================
+  // Entry Points
+  // ==================================================================
+
   handleConnection(client: Socket) {
-    this.logger.log(`✅ Client Connected: ${client.id}`);
+    this.processConnection(client);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`❌ Client Disconnected: ${client.id}`);
+    this.processDisconnect(client);
   }
 
   @SubscribeMessage(SOCKET_EVENTS.JOIN_ROOM)
@@ -37,8 +46,81 @@ export class CollaborationGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinRoomPayload,
   ) {
-    const { roomId } = payload;
+    this.processJoinRoom(client, payload.roomId);
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.UPDATE_CODE)
+  handleCodeUpdate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: CodeUpdatePayload,
+  ) {
+    this.processCodeUpdate(client, payload);
+  }
+
+  // ==================================================================
+  // Business Logics
+  // ==================================================================
+
+  private processConnection(client: Socket) {
+    this.logger.log(`✅ Client Connected: ${client.id}`);
+  }
+
+  private processDisconnect(client: Socket) {
+    this.logger.log(`❌ Client Disconnected: ${client.id}`);
+
+    const roomId = this.getMockRoomIdBySocket(client.id);
+    if (roomId) {
+      this.server.to(roomId).emit(SOCKET_EVENTS.USER_LEFT, {
+        socketId: client.id,
+      });
+      this.logger.log(`👋 [LEAVE] Client ${client.id} left room: ${roomId}`);
+    }
+  }
+
+  private processJoinRoom(client: Socket, roomId: string) {
+    // Socket Join
     client.join(roomId);
-    this.logger.log(`📩 User ${client.id} joined room: ${roomId}`);
+
+    // 데이터 가져오기
+    const user = this.createMockUser(client);
+    const initialCode = this.getMockInitialCode(roomId);
+
+    this.logger.log(
+      `📩 [JOIN] ${user.nickname} (${user.socketId}) joined room: ${roomId}`,
+    );
+
+    // 이벤트 브로드케스트
+    client.to(roomId).emit(SOCKET_EVENTS.USER_JOINED, { user });
+    client.emit(SOCKET_EVENTS.ROOM_USERS, { users: [user] });
+    client.emit(SOCKET_EVENTS.SYNC_CODE, { roomId, code: initialCode });
+  }
+
+  private processCodeUpdate(client: Socket, payload: CodeUpdatePayload) {
+    const { roomId, code } = payload;
+    this.logger.debug(`📝 [UPDATE] Room: ${roomId}, Length: ${code.length}`);
+
+    // 다른 사람들에게 브로드케스트
+    client.to(roomId).emit(SOCKET_EVENTS.UPDATE_CODE, payload);
+  }
+
+  // ==================================================================
+  // Helpers & Mocks
+  // TODO: 실제 로직으로 교체 필요
+  // ==================================================================
+
+  private getMockRoomIdBySocket(socketId: string): string {
+    return 'prototype';
+  }
+
+  private createMockUser(client: Socket): User {
+    return {
+      socketId: client.id,
+      nickname: `Guest-${client.id.slice(0, 4)}`,
+      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+    };
+  }
+
+  private getMockInitialCode(roomId: string): string {
+    return `// Initial code for room: ${roomId}\n// Waiting for synchronization...`;
   }
 }
