@@ -1,4 +1,5 @@
 import { type JoinRoomPayload, SOCKET_EVENTS } from '@codejam/common';
+import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -18,15 +19,17 @@ import { Server, Socket } from 'socket.io';
 export class CollaborationGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
+  private readonly logger = new Logger(CollaborationGateway.name);
+
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
-    console.log(`✅ Client Connected: ${client.id}`);
+    this.logger.log(`✅ Client Connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`❌ Client Disconnected: ${client.id}`);
+    this.logger.log(`❌ Client Disconnected: ${client.id}`);
   }
 
   @SubscribeMessage(SOCKET_EVENTS.JOIN_ROOM)
@@ -35,10 +38,7 @@ export class CollaborationGateway
     @MessageBody() payload: JoinRoomPayload,
   ) {
     const { roomId } = payload;
-    const randomNickname = `Guest-${client.id.slice(0, 4)}`;
-
     client.join(roomId);
-
-    console.log(`📩 User ${randomNickname} joined room: ${roomId}`);
+    this.logger.log(`📩 User ${client.id} joined room: ${roomId}`);
   }
 }
