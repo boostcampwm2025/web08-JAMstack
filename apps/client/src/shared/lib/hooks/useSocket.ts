@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { socket } from '@/shared/api/socket';
 import {
   SOCKET_EVENTS,
@@ -79,5 +79,27 @@ export const useSocket = (roomId: string) => {
     };
   }, [roomId]);
 
-  return { socket, isConnected };
+  // ==================================================================
+  // Emitting Methods (Public)
+  // 컴포넌트에서 비즈니스 로직을 수행할 때 호출하는 함수들
+  // ==================================================================
+
+  /**
+   * 코드 변경 사항 전송
+   * @param code 변경된 전체 코드 문자열
+   */
+  const sendCode = useCallback(
+    (code: string) => {
+      if (socket.connected) {
+        socket.emit(SOCKET_EVENTS.UPDATE_CODE, { roomId, code });
+      }
+    },
+    [roomId]
+  );
+
+  return {
+    socket, // 필요 시 외부에서 직접 리스너 등록 가능 (Zustand 등에서 사용)
+    isConnected, // 연결 상태 표시 UI용
+    sendCode, // 코드 전송 함수
+  };
 };
