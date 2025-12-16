@@ -75,7 +75,6 @@ export const useSocket = (roomId: string) => {
       socket.off(SOCKET_EVENTS.ROOM_USERS, onRoomUsers);
       socket.off(SOCKET_EVENTS.SYNC_CODE, onSyncCode);
       socket.off(SOCKET_EVENTS.UPDATE_CODE, onUpdateCode);
-      socket.disconnect();
     };
   }, [roomId]);
 
