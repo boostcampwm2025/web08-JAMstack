@@ -1,6 +1,10 @@
+import { type JoinRoomPayload, SOCKET_EVENTS } from '@codejam/common';
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -23,5 +27,18 @@ export class CollaborationGateway
 
   handleDisconnect(client: Socket) {
     console.log(`❌ Client Disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.JOIN_ROOM)
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: JoinRoomPayload,
+  ) {
+    const { roomId } = payload;
+    const randomNickname = `Guest-${client.id.slice(0, 4)}`;
+
+    client.join(roomId);
+
+    console.log(`📩 User ${randomNickname} joined room: ${roomId}`);
   }
 }
