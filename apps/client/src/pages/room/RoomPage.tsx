@@ -1,3 +1,4 @@
+import { useSession } from "@/shared/lib/hooks/useSession";
 import { CodeEditor } from "@/widgets/code-editor";
 import { Header } from "@/widgets/header";
 
