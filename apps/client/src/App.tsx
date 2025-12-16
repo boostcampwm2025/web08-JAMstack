@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import RoomPage from "./pages/room/RoomPage";
-import NotFoundPage from "./pages/not-found/NotFoundPage";
+import RoomPage from "@/pages/room/RoomPage";
+import NotFoundPage from "@/pages/not-found/NotFoundPage";
 
 function App() {
   return (
