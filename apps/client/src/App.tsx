@@ -1,12 +1,16 @@
-import { PROJECT_NAME } from '@codejam/common';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import RoomPage from "@/pages/room/RoomPage";
+import NotFoundPage from "@/pages/not-found/NotFoundPage";
 
 function App() {
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold text-blue-600">
-        Hello, {PROJECT_NAME}!
-      </h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+          <Route path="/" element={<Navigate to="/room/prototype" replace />} />
+          <Route path="/room/prototype" element={<RoomPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
