@@ -6,9 +6,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/room/prototype" replace />} />
-        <Route path="/room/prototype" element={<RoomPage />} />
-        <Route path="*" element={<NotFoundPage />} />
+        <Route errorElement={<NotFoundPage />}>
+          <Route path="/" element={<Navigate to="/room/prototype" replace />} />
+          <Route path="/room/prototype" element={<RoomPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        
       </Routes>
     </BrowserRouter>
   );
