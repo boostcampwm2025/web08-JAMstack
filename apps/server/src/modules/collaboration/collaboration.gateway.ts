@@ -1,5 +1,5 @@
 import {
-  type CodeUpdatePayload,
+  type FileUpdatePayload,
   type JoinRoomPayload,
   SOCKET_EVENTS,
   Pt,
@@ -46,13 +46,13 @@ export class CollaborationGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinRoomPayload,
   ) {
-    this.processJoinRoom(client, payload.roomId);
+    this.processJoinRoom(client, payload);
   }
 
-  @SubscribeMessage(SOCKET_EVENTS.UPDATE_CODE)
+  @SubscribeMessage(SOCKET_EVENTS.UPDATE_FILE)
   handleCodeUpdate(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: CodeUpdatePayload,
+    @MessageBody() payload: FileUpdatePayload,
   ) {
     this.processCodeUpdate(client, payload);
   }
@@ -69,38 +69,42 @@ export class CollaborationGateway
     this.logger.log(`❌ Client Disconnected: ${client.id}`);
 
     const roomId = this.getMockRoomIdBySocket(client.id);
-    if (roomId) {
-      this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, {
-        socketId: client.id,
+    const ptId = this.getMockPtIdBySocket(client.id);
+    if (roomId && ptId) {
+      this.server.to(roomId).emit(SOCKET_EVENTS.PT_DISCONNECT, {
+        ptId,
+        presence: 'offline',
       });
-      this.logger.log(`👋 [LEAVE] Client ${client.id} left room: ${roomId}`);
+      this.logger.log(`👋 [DISCONNECT] PtId ${ptId} left room: ${roomId}`);
     }
   }
 
-  private processJoinRoom(client: Socket, roomId: string) {
+  private processJoinRoom(client: Socket, payload: JoinRoomPayload) {
+    const { roomId, ptId: requestedPtId } = payload;
+
     // Socket Join
     client.join(roomId);
 
-    // 데이터 가져오기
-    const pt = this.createMockPt(client);
+    // 데이터 가져오기 - ptId가 있으면 재사용, 없으면 생성
+    const pt = this.createMockPt(client, requestedPtId);
     const initialCode = this.getMockInitialCode(roomId);
 
     this.logger.log(
-      `📩 [JOIN] ${pt.nickname} (${pt.socketId}) joined room: ${roomId}`,
+      `📩 [JOIN] ${pt.nickname} (ptId: ${pt.ptId}) joined room: ${roomId}`,
     );
 
     // 이벤트 브로드케스트
     client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
     client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: [pt] });
-    client.emit(SOCKET_EVENTS.SYNC_CODE, { roomId, code: initialCode });
+    client.emit(SOCKET_EVENTS.ROOM_FILES, { roomId, code: initialCode });
   }
 
-  private processCodeUpdate(client: Socket, payload: CodeUpdatePayload) {
+  private processCodeUpdate(client: Socket, payload: FileUpdatePayload) {
     const { roomId, code } = payload;
     this.logger.debug(`📝 [UPDATE] Room: ${roomId}, Length: ${code.length}`);
 
     // 다른 사람들에게 브로드케스트
-    client.to(roomId).emit(SOCKET_EVENTS.UPDATE_CODE, payload);
+    client.to(roomId).emit(SOCKET_EVENTS.UPDATE_FILE, payload);
   }
 
   // ==================================================================
@@ -112,11 +116,22 @@ export class CollaborationGateway
     return 'prototype';
   }
 
-  private createMockPt(client: Socket): Pt {
+  private getMockPtIdBySocket(socketId: string): string | null {
+    // Mock: socketId를 기반으로 ptId 생성/조회
+    // 실제로는 DB나 메모리 저장소에서 조회해야 함
+    return `pt-${socketId.slice(0, 8)}`;
+  }
+
+  private createMockPt(client: Socket, requestedPtId?: string): Pt {
+    const ptId = requestedPtId || `pt-${client.id.slice(0, 8)}`;
+
     return {
-      socketId: client.id,
-      nickname: `Guest-${client.id.slice(0, 4)}`,
+      ptId,
+      nickname: `Guest-${ptId.slice(3, 7)}`,
+      role: 'editor', // Mock: 기본값으로 editor 설정
       color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+      presence: 'online',
+      joinedAt: new Date().toISOString(),
     };
   }
 

@@ -13,9 +13,9 @@ export const SOCKET_EVENTS = {
   /**
    * 클라이언트가 방을 떠나거나 연결이 끊어졌을 때 발생.
    * 서버 -> 클라이언트 (브로드캐스트)
-   * - Payload: {@link PtLeftPayload}
+   * - Payload: {@link PtDisconnectPayload}
    */
-  PT_LEFT: 'room:pt_left',
+  PT_DISCONNECT: 'room:pt_disconnect',
 
   /**
    * 방에 새로운 유저가 입장했음을 알림.
@@ -34,12 +34,12 @@ export const SOCKET_EVENTS = {
   /**
    * 코드 에디터의 내용이 변경되었을 때 발생.
    * 현재는 변경된 전체 코드를 전송.
-   * - Payload: {@link CodeUpdatePayload}
+   * - Payload: {@link FileUpdatePayload}
    */
-  UPDATE_CODE: 'code:update',
+  UPDATE_FILE: 'file:update',
 
   /**
-   * 새로운 사용자가 입장했을 때, 기존의 최신 코드 상태를 동기화하기 위해 발생.
+   * 새로운 사용자가 입장했을 때, 기존의 최신 파일 목록을 동기화하기 위해 발생.
    */
-  SYNC_CODE: 'code:sync',
+  ROOM_FILES: 'room:files',
 } as const;

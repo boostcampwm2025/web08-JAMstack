@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { socket } from '@/shared/api/socket';
 import {
   SOCKET_EVENTS,
-  type CodeUpdatePayload,
+  type FileUpdatePayload,
   type RoomPtsPayload,
   type PtJoinedPayload,
-  type PtLeftPayload,
+  type PtDisconnectPayload,
 } from '@codejam/common';
 
 export const useSocket = (roomId: string) => {
@@ -39,20 +39,22 @@ export const useSocket = (roomId: string) => {
       console.log(`👋 [PT_JOINED] ${data.pt.nickname}`);
     };
 
-    const onPtLeft = (data: PtLeftPayload) => {
-      console.log(`👋 [PT_LEFT] SocketId: ${data.socketId}`);
+    const onPtDisconnect = (data: PtDisconnectPayload) => {
+      console.log(
+        `👋 [PT_DISCONNECT] PtId: ${data.ptId}, Presence: ${data.presence}`
+      );
     };
 
     const onRoomPts = (data: RoomPtsPayload) => {
       console.log(`👥 [ROOM_PTS] Count: ${data.pts.length}`, data.pts);
     };
 
-    const onSyncCode = (data: CodeUpdatePayload) => {
-      console.log(`🔄 [SYNC_CODE] Length: ${data.code.length}`);
+    const onRoomFiles = (data: FileUpdatePayload) => {
+      console.log(`📁 [ROOM_FILES] Length: ${data.code.length}`);
     };
 
-    const onUpdateCode = (data: CodeUpdatePayload) => {
-      console.log(`📝 [UPDATE_CODE] From Server (Length: ${data.code.length})`);
+    const onUpdateCode = (data: FileUpdatePayload) => {
+      console.log(`📝 [UPDATE_FILE] From Server (Length: ${data.code.length})`);
     };
 
     // ==================================================================
@@ -62,19 +64,19 @@ export const useSocket = (roomId: string) => {
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on(SOCKET_EVENTS.PT_JOINED, onPtJoined);
-    socket.on(SOCKET_EVENTS.PT_LEFT, onPtLeft);
+    socket.on(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
     socket.on(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
-    socket.on(SOCKET_EVENTS.SYNC_CODE, onSyncCode);
-    socket.on(SOCKET_EVENTS.UPDATE_CODE, onUpdateCode);
+    socket.on(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
+    socket.on(SOCKET_EVENTS.UPDATE_FILE, onUpdateCode);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off(SOCKET_EVENTS.PT_JOINED, onPtJoined);
-      socket.off(SOCKET_EVENTS.PT_LEFT, onPtLeft);
+      socket.off(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
       socket.off(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
-      socket.off(SOCKET_EVENTS.SYNC_CODE, onSyncCode);
-      socket.off(SOCKET_EVENTS.UPDATE_CODE, onUpdateCode);
+      socket.off(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
+      socket.off(SOCKET_EVENTS.UPDATE_FILE, onUpdateCode);
     };
   }, [roomId]);
 
@@ -90,7 +92,7 @@ export const useSocket = (roomId: string) => {
   const sendCode = useCallback(
     (code: string) => {
       if (socket.connected) {
-        socket.emit(SOCKET_EVENTS.UPDATE_CODE, { roomId, code });
+        socket.emit(SOCKET_EVENTS.UPDATE_FILE, { roomId, code });
       }
     },
     [roomId]
