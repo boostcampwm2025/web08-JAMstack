@@ -1,15 +1,11 @@
 import { useMemo } from "react";
 import { Participant } from "./Participant";
 import { sorter } from "./sorter";
-import { useParticipantStore } from "@/stores/participants";
+import { usePtsStore } from "@/stores/pts";
 
 export function Participants() {
-  const participants = useParticipantStore((state) => state.participants);
-  const sorted = useMemo(
-    () => Object.values(participants).sort(sorter),
-    [participants]
-  );
-
+  const pts = usePtsStore((state) => state.pts);
+  const sorted = useMemo(() => Object.values(pts).sort(sorter), [pts]);
   const count = sorted.length;
 
   return (
@@ -20,7 +16,7 @@ export function Participants() {
 
       <div className="space-y-1 mt-4">
         {sorted.map((p) => (
-          <Participant key={p.id} id={p.id} />
+          <Participant key={p.ptId} ptId={p.ptId} />
         ))}
       </div>
     </div>

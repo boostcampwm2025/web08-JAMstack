@@ -1,57 +1,51 @@
-import {
-  useParticipant,
-  ParticipantContext,
-} from "@/widgets/participants/useParticipant";
-import {
-  useParticipant as useParticipantById,
-  useParticipantStore,
-} from "@/stores/participants";
+import { memo } from "react";
+import { usePt } from "@/stores/pts";
+import { useRoomStore } from "@/stores/room";
 
 export interface ParticipantProps {
-  id: string;
+  ptId: string;
 }
 
-export function Participant({ id }: ParticipantProps) {
-  const participant = useParticipantById(id);
-  if (!participant) return null;
+export const Participant = memo(({ ptId }: ParticipantProps) => {
+  const pt = usePt(ptId);
+  if (!pt) return null;
 
-  const isOnline = participant.presence === "online";
+  const isOnline = pt.presence === "online";
   const opacity = isOnline ? "opacity-100" : "opacity-40";
 
   return (
-    <ParticipantContext.Provider value={participant}>
-      <div className="flex items-center justify-between p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
-        <div className={`flex items-center space-x-3 ${opacity}`}>
-          <Avatar />
-          <Info />
-        </div>
-        <Menu />
+    <div
+      className="flex items-center justify-between p-2 transition-colors 
+        select-none hover:bg-gray-100 dark:hover:bg-gray-700"
+    >
+      <div className={`flex items-center space-x-3 ${opacity}`}>
+        <Avatar ptId={ptId} />
+        <Info ptId={ptId} />
       </div>
-    </ParticipantContext.Provider>
+      <Menu />
+    </div>
   );
-}
+});
+
+Participant.displayName = "Participant"; // 디버그 시 표시되는 컴포넌트 이름
 
 /**
  * 참가자의 아바타, 온라인 상태, 방장 여부 표시
  */
 
-export function Avatar() {
-  const participant = useParticipant();
-  const { avatar, nickname, color, role } = participant;
+export function Avatar({ ptId }: ParticipantProps) {
+  const pt = usePt(ptId);
+  const { nickname, color, role } = pt;
+  const initial = nickname.charAt(0);
 
-  const image = (
-    <img
-      src={avatar}
-      alt={`${nickname}'s avatar`}
-      className="w-10 h-10 rounded-full object-cover"
-    />
-  );
-
-  const placeholder = (
+  const avatar = (
     <div
-      className="w-10 h-10 rounded-full"
+      className="w-10 h-10 rounded-full 
+        flex items-center justify-center text-white text-lg font-semibold"
       style={{ backgroundColor: color }}
-    />
+    >
+      {initial}
+    </div>
   );
 
   const roleIcon =
@@ -63,7 +57,7 @@ export function Avatar() {
 
   return (
     <div className={`relative w-10 h-10 rounded-full`}>
-      {avatar ? image : placeholder}
+      {avatar}
       {roleIcon}
     </div>
   );
@@ -79,18 +73,16 @@ const roleTextColors = {
   viewer: "gray",
 };
 
-export function Info() {
-  const { id, nickname, role } = useParticipant();
-  const currentParticipantId = useParticipantStore(
-    (state) => state.currentParticipantId
-  );
+export function Info({ ptId }: ParticipantProps) {
+  const { nickname, role } = usePt(ptId);
+  const myPtId = useRoomStore((state) => state.myPtId);
 
   const roleText = role.charAt(0).toUpperCase() + role.slice(1);
   const roleTextColor = roleTextColors[role] ?? "transparent";
 
-  const isCurrentUser = currentParticipantId === id;
+  const isMe = myPtId === ptId;
 
-  const you = (
+  const youText = (
     <span className="ml-1.5 text-xs font-normal text-gray-500 dark:text-gray-400">
       (You)
     </span>
@@ -100,7 +92,7 @@ export function Info() {
     <div>
       <div className="flex items-center text-sm font-semibold text-gray-800 dark:text-gray-100">
         {nickname}
-        {isCurrentUser && you}
+        {isMe && youText}
       </div>
       <div className="text-xs font-medium" style={{ color: roleTextColor }}>
         {roleText}

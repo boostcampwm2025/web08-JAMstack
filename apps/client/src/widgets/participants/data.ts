@@ -1,99 +1,87 @@
-import type { Participant } from "@/entities/participant";
+import type { Pt } from "@/entities/participant";
 
-export const participantId = "E";
+export const roomId = "prototype";
+export const myPtId = "E";
 
-const Alice: Participant = {
-  id: "A",
+const Alice: Pt = {
+  ptId: "A",
   nickname: "Alice",
   role: "host",
-  avatar: "https://i.pravatar.cc/48?img=1",
   color: "#FF6B6B",
-  clientId: "socket-id-alice",
   presence: "online",
-  type: "authenticated",
+  joinedAt: "2000-01-01T01:00:00.000Z",
 };
 
-const Bob: Participant = {
-  id: "B",
+const Bob: Pt = {
+  ptId: "B",
   nickname: "Bob",
-  role: "editor",
-  avatar: "https://i.pravatar.cc/48?img=2",
+  role: "viewer",
   color: "#4ECDC4",
-  clientId: "socket-id-bob",
   presence: "online",
-  type: "authenticated",
+  joinedAt: "2000-01-01T08:00:00.000Z",
 };
 
-const Charlie: Participant = {
-  id: "C",
+const Charlie: Pt = {
+  ptId: "C",
   nickname: "Charlie",
   role: "editor",
   color: "#45B7D1",
-  clientId: "socket-id-charlie",
   presence: "online",
-  type: "anonymous",
+  joinedAt: "2000-01-01T02:00:00.000Z",
 };
 
-const David: Participant = {
-  id: "D",
+const David: Pt = {
+  ptId: "D",
   nickname: "David",
   role: "viewer",
-  avatar: "https://i.pravatar.cc/48?img=4",
   color: "#FED766",
-  clientId: "socket-id-david",
   presence: "offline",
-  type: "authenticated",
+  joinedAt: "2000-01-01T07:00:00.000Z",
 };
 
-const Eve: Participant = {
-  id: "E",
+const Eve: Pt = {
+  ptId: "E",
   nickname: "Eve",
   role: "editor",
   color: "#2AB7CA",
-  clientId: "socket-id-eve",
   presence: "online",
-  type: "anonymous",
+  joinedAt: "2000-01-01T03:00:00.000Z",
 };
 
-const Frank: Participant = {
-  id: "F",
+const Frank: Pt = {
+  ptId: "F",
   nickname: "Frank",
   role: "viewer",
-  avatar: "https://i.pravatar.cc/48?img=6",
   color: "#F0A6CA",
-  clientId: "socket-id-frank",
   presence: "offline",
-  type: "authenticated",
+  joinedAt: "2000-01-01T06:00:00.000Z",
 };
 
-const Grace: Participant = {
-  id: "G",
+const Grace: Pt = {
+  ptId: "G",
   nickname: "Grace",
   role: "editor",
   color: "#A2D5F2",
-  clientId: "socket-id-grace",
   presence: "online",
-  type: "anonymous",
+  joinedAt: "2000-01-01T04:00:00.000Z",
 };
 
-const Heidi: Participant = {
-  id: "H",
+const Heidi: Pt = {
+  ptId: "H",
   nickname: "Heidi",
   role: "editor",
-  avatar: "https://i.pravatar.cc/48?img=8",
   color: "#F4A261",
-  clientId: "socket-id-heidi",
   presence: "online",
-  type: "authenticated",
+  joinedAt: "2000-01-01T05:00:00.000Z",
 };
 
-export const data: Record<string, Participant> = {
-  [Alice.id]: Alice,
-  [Bob.id]: Bob,
-  [Charlie.id]: Charlie,
-  [David.id]: David,
-  [Eve.id]: Eve,
-  [Frank.id]: Frank,
-  [Grace.id]: Grace,
-  [Heidi.id]: Heidi,
+export const data: Record<string, Pt> = {
+  [Alice.ptId]: Alice,
+  [Bob.ptId]: Bob,
+  [Charlie.ptId]: Charlie,
+  [David.ptId]: David,
+  [Eve.ptId]: Eve,
+  [Frank.ptId]: Frank,
+  [Grace.ptId]: Grace,
+  [Heidi.ptId]: Heidi,
 };

@@ -1,24 +1,21 @@
-import type { Participant } from "@/entities/participant";
+import type { Pt } from "@/entities/participant";
 
-const onlineOrder = (status: Participant["presence"]) => {
+const onlineOrder = (status: Pt["presence"]) => {
   if (status === "online") return 1;
   return 2; // offline
 };
 
-const roleOrder = (role: Participant["role"]) => {
+const roleOrder = (role: Pt["role"]) => {
   if (role === "host") return 1;
   if (role === "editor") return 2;
   return 3; // viewer
 };
 
-const nicknameCompare = (
-  x: Participant["nickname"],
-  y: Participant["nickname"]
-) => {
+const nicknameCompare = (x: Pt["nickname"], y: Pt["nickname"]) => {
   return x.localeCompare(y);
 };
 
-export const sorter = (a: Participant, b: Participant) => {
+export const sorter = (a: Pt, b: Pt) => {
   // 온라인 상태 정렬
   const onlineA = onlineOrder(a.presence);
   const onlineB = onlineOrder(b.presence);
