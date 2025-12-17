@@ -5,7 +5,7 @@ import {
   Pt,
   type PtLeftPayload,
 } from '@codejam/common';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject, OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -16,6 +16,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Redis } from 'ioredis';
 import { RoomService } from '../room/room.service';
 
 @WebSocketGateway({
@@ -24,17 +25,50 @@ import { RoomService } from '../room/room.service';
   },
 })
 export class CollaborationGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {
   private readonly logger = new Logger(CollaborationGateway.name);
 
   // socketId → { roomId, ptId } 매핑
   private socketMap = new Map<string, { roomId: string; ptId: string }>();
 
-  constructor(private readonly roomService: RoomService) {}
+  constructor(
+    private readonly roomService: RoomService,
+    @Inject('REDIS_SUBSCRIBER') private readonly redisSubscriber: Redis,
+  ) {}
 
   @WebSocketServer()
   server: Server;
+
+  // ==================================================================
+  // Lifecycle Hooks
+  // ==================================================================
+
+  onModuleInit() {
+    this.subscribeToRedisExpiration();
+  }
+
+  /**
+   * Redis TTL 만료 이벤트 구독
+   * 키 형식: room:{roomId}:pt:{ptId}
+   */
+  private subscribeToRedisExpiration() {
+    // __keyevent@0__:expired 채널 구독 (DB 0번의 만료 이벤트)
+    this.redisSubscriber.subscribe('__keyevent@0__:expired');
+
+    this.redisSubscriber.on('message', (channel, expiredKey) => {
+      if (channel !== '__keyevent@0__:expired') return;
+
+      // 키 형식: room:{roomId}:pt:{ptId}
+      const match = expiredKey.match(/^room:(.+):pt:(.+)$/);
+      if (!match) return;
+
+      const [, roomId, ptId] = match;
+      this.processPtLeftByTTL(roomId, ptId);
+    });
+
+    this.logger.log('🔔 Subscribed to Redis keyspace expiration events');
+  }
 
   // ==================================================================
   // Entry Points
@@ -136,7 +170,7 @@ export class CollaborationGateway
 
   /**
    * Redis TTL 만료로 사용자가 삭제되었을 때 처리하는 로직
-   * TODO: Redis keyspace notification으로 호출 예정
+   * Redis keyspace notification에서 자동 호출됨
    */
   private processPtLeftByTTL(roomId: string, ptId: string) {
     this.logger.log(

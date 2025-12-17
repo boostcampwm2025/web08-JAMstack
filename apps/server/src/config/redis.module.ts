@@ -15,7 +15,22 @@ import { ConfigService } from '@nestjs/config';
       },
       inject: [ConfigService],
     },
+    {
+      provide: 'REDIS_SUBSCRIBER',
+      useFactory: (configService: ConfigService) => {
+        const subscriber = new Redis({
+          host: configService.get('REDIS_HOST'),
+          port: configService.get('REDIS_PORT'),
+        });
+
+        // keyspace notification 구독 (TTL 만료 이벤트)
+        subscriber.config('SET', 'notify-keyspace-events', 'Ex');
+
+        return subscriber;
+      },
+      inject: [ConfigService],
+    },
   ],
-  exports: ['REDIS_CLIENT'],
+  exports: ['REDIS_CLIENT', 'REDIS_SUBSCRIBER'],
 })
 export class RedisModule {}
