@@ -88,6 +88,14 @@ export class RoomService {
     await this.redis.set(`room:${roomId}:code`, JSON.stringify({ code }));
   }
 
+  /**
+   * 방 존재 여부 확인 (GET /api/room/:roomId/exists 용)
+   */
+  async roomExists(roomId: string): Promise<boolean> {
+    const keys = await this.redis.keys(`room:${roomId}:*`);
+    return keys.length > 0;
+  }
+
   // ================================
   // 랜덤 닉네임과 색상 생성
   // ================================
