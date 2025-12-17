@@ -85,24 +85,36 @@ export class CollaborationGateway
     }
   }
 
-  private processJoinRoom(client: Socket, payload: JoinRoomPayload) {
+  private async processJoinRoom(client: Socket, payload: JoinRoomPayload) {
     const { roomId, ptId: requestedPtId } = payload;
 
-    // Socket Join
+    // Socket room 입장
     client.join(roomId);
 
-    // 데이터 가져오기 - ptId가 있으면 재사용, 없으면 생성
-    const pt = this.createMockPt(client, requestedPtId);
-    const initialCode = this.getMockInitialCode(roomId);
+    // 참가자 생성 또는 복원
+    let pt: Pt | null = null;
+    if (requestedPtId) {
+      pt = await this.roomService.restorePt(roomId, requestedPtId);
+    }
+    if (!pt) {
+      pt = await this.roomService.createPt(roomId);
+    }
+
+    // socketMap에 매핑 저장
+    this.socketMap.set(client.id, { roomId, ptId: pt.ptId });
+
+    // 현재 참가자 목록 및 코드 조회
+    const allPts = await this.roomService.getAllPts(roomId);
+    const code = await this.roomService.getCode(roomId);
 
     this.logger.log(
       `📩 [JOIN] ${pt.nickname} (ptId: ${pt.ptId}) joined room: ${roomId}`,
     );
 
-    // 이벤트 브로드케스트
-    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
-    client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: [pt] });
-    client.emit(SOCKET_EVENTS.ROOM_FILES, { roomId, code: initialCode });
+    // 이벤트 전송
+    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt }); // 다른 사람들에게
+    client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: allPts }); // 본인에게 참가자 목록
+    client.emit(SOCKET_EVENTS.ROOM_FILES, { roomId, code }); // 본인에게 현재 코드
   }
 
   private processCodeUpdate(client: Socket, payload: FileUpdatePayload) {
