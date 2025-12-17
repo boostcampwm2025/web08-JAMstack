@@ -1,14 +1,15 @@
-import { useSession } from "@/shared/lib/hooks/useSession";
+import { useSocket } from "@/shared/lib/hooks/useSocket";
 import { CodeEditor } from "@/widgets/code-editor";
 import { Header } from "@/widgets/header";
 
 function RoomPage() {
-  const { session, isLoading } = useSession();
+  // 프로토타입: roomId 고정
+  const { isConnected } = useSocket("prototype");
 
-  if (isLoading || !session) {
+  if (!isConnected) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
-        <p className="text-gray-600">로딩중...</p>
+        <p className="text-gray-600">연결 중...</p>
       </div>
     );
   }
