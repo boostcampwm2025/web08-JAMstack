@@ -2,7 +2,7 @@ import {
   type CodeUpdatePayload,
   type JoinRoomPayload,
   SOCKET_EVENTS,
-  User,
+  Pt,
 } from '@codejam/common';
 import { Logger } from '@nestjs/common';
 import {
@@ -70,7 +70,7 @@ export class CollaborationGateway
 
     const roomId = this.getMockRoomIdBySocket(client.id);
     if (roomId) {
-      this.server.to(roomId).emit(SOCKET_EVENTS.USER_LEFT, {
+      this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, {
         socketId: client.id,
       });
       this.logger.log(`👋 [LEAVE] Client ${client.id} left room: ${roomId}`);
@@ -82,16 +82,16 @@ export class CollaborationGateway
     client.join(roomId);
 
     // 데이터 가져오기
-    const user = this.createMockUser(client);
+    const pt = this.createMockPt(client);
     const initialCode = this.getMockInitialCode(roomId);
 
     this.logger.log(
-      `📩 [JOIN] ${user.nickname} (${user.socketId}) joined room: ${roomId}`,
+      `📩 [JOIN] ${pt.nickname} (${pt.socketId}) joined room: ${roomId}`,
     );
 
     // 이벤트 브로드케스트
-    client.to(roomId).emit(SOCKET_EVENTS.USER_JOINED, { user });
-    client.emit(SOCKET_EVENTS.ROOM_USERS, { users: [user] });
+    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
+    client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: [pt] });
     client.emit(SOCKET_EVENTS.SYNC_CODE, { roomId, code: initialCode });
   }
 
@@ -112,7 +112,7 @@ export class CollaborationGateway
     return 'prototype';
   }
 
-  private createMockUser(client: Socket): User {
+  private createMockPt(client: Socket): Pt {
     return {
       socketId: client.id,
       nickname: `Guest-${client.id.slice(0, 4)}`,

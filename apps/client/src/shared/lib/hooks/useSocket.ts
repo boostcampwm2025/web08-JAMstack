@@ -3,9 +3,9 @@ import { socket } from '@/shared/api/socket';
 import {
   SOCKET_EVENTS,
   type CodeUpdatePayload,
-  type RoomUsersPayload,
-  type UserJoinedPayload,
-  type UserLeftPayload,
+  type RoomPtsPayload,
+  type PtJoinedPayload,
+  type PtLeftPayload,
 } from '@codejam/common';
 
 export const useSocket = (roomId: string) => {
@@ -35,16 +35,16 @@ export const useSocket = (roomId: string) => {
       setIsConnected(false);
     };
 
-    const onUserJoined = (data: UserJoinedPayload) => {
-      console.log(`👋 [USER_JOINED] ${data.user.nickname}`);
+    const onPtJoined = (data: PtJoinedPayload) => {
+      console.log(`👋 [PT_JOINED] ${data.pt.nickname}`);
     };
 
-    const onUserLeft = (data: UserLeftPayload) => {
-      console.log(`👋 [USER_LEFT] SocketId: ${data.socketId}`);
+    const onPtLeft = (data: PtLeftPayload) => {
+      console.log(`👋 [PT_LEFT] SocketId: ${data.socketId}`);
     };
 
-    const onRoomUsers = (data: RoomUsersPayload) => {
-      console.log(`👥 [ROOM_USERS] Count: ${data.users.length}`, data.users);
+    const onRoomPts = (data: RoomPtsPayload) => {
+      console.log(`👥 [ROOM_PTS] Count: ${data.pts.length}`, data.pts);
     };
 
     const onSyncCode = (data: CodeUpdatePayload) => {
@@ -61,18 +61,18 @@ export const useSocket = (roomId: string) => {
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
-    socket.on(SOCKET_EVENTS.USER_JOINED, onUserJoined);
-    socket.on(SOCKET_EVENTS.USER_LEFT, onUserLeft);
-    socket.on(SOCKET_EVENTS.ROOM_USERS, onRoomUsers);
+    socket.on(SOCKET_EVENTS.PT_JOINED, onPtJoined);
+    socket.on(SOCKET_EVENTS.PT_LEFT, onPtLeft);
+    socket.on(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
     socket.on(SOCKET_EVENTS.SYNC_CODE, onSyncCode);
     socket.on(SOCKET_EVENTS.UPDATE_CODE, onUpdateCode);
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
-      socket.off(SOCKET_EVENTS.USER_JOINED, onUserJoined);
-      socket.off(SOCKET_EVENTS.USER_LEFT, onUserLeft);
-      socket.off(SOCKET_EVENTS.ROOM_USERS, onRoomUsers);
+      socket.off(SOCKET_EVENTS.PT_JOINED, onPtJoined);
+      socket.off(SOCKET_EVENTS.PT_LEFT, onPtLeft);
+      socket.off(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
       socket.off(SOCKET_EVENTS.SYNC_CODE, onSyncCode);
       socket.off(SOCKET_EVENTS.UPDATE_CODE, onUpdateCode);
     };

@@ -1,7 +1,7 @@
 /**
  * 소켓에 연결된 개별 사용자 정보.
  */
-export interface User {
+export interface Pt {
   /**
    * 소켓 연결 시 생성되는 고유 식별자 (Socket ID)
    */
@@ -47,19 +47,19 @@ export interface CodeUpdatePayload {
 }
 
 /**
- * 다른 사용자가 방에 입장했을 때(`room:user_joined`) 브로드캐스트되는 데이터 페이로드.
+ * 다른 사용자가 방에 입장했을 때(`room:pt_joined`) 브로드캐스트되는 데이터 페이로드.
  */
-export interface UserJoinedPayload {
+export interface PtJoinedPayload {
   /**
    * 새로 입장한 사용자 객체
    */
-  user: User;
+  pt: Pt;
 }
 
 /**
- * 사용자가 방을 나갔을 때(`room:user_left`) 브로드캐스트되는 데이터 페이로드.
+ * 사용자가 방을 나갔을 때(`room:pt_left`) 브로드캐스트되는 데이터 페이로드.
  */
-export interface UserLeftPayload {
+export interface PtLeftPayload {
   /**
    * 퇴장한 사용자의 소켓 ID
    * @desc 클라이언트 목록에서 해당 사용자를 제거하기 위해 식별자로 사용.
@@ -68,12 +68,12 @@ export interface UserLeftPayload {
 }
 
 /**
- * 방에 접속 중인 전체 사용자 목록을 갱신할 때(`room:users`) 전송되는 데이터 페이로드.
+ * 방에 접속 중인 전체 사용자 목록을 갱신할 때(`room:pts`) 전송되는 데이터 페이로드.
  * @desc 주로 방에 처음 입장했을 때 현재 접속자 리스트를 받기 위해 사용.
  */
-export interface RoomUsersPayload {
+export interface RoomPtsPayload {
   /**
-   * 현재 방에 있는 모든 사용자(User)의 배열
+   * 현재 방에 있는 모든 사용자(Pt)의 배열
    */
-  users: User[];
+  pts: Pt[];
 }
