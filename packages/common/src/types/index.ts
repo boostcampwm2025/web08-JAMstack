@@ -78,9 +78,17 @@ export interface PtJoinedPayload {
 export interface PtDisconnectPayload {
   /** 연결이 끊어진 참가자의 ID */
   ptId: string;
+}
 
-  /** 변경된 접속 상태 (주로 'offline' 처리용) */
-  presence: 'online' | 'offline';
+/**
+ * 사용자가 redis에서 TTL 만료되어 삭제됐을 때(`room:pt_left`) 브로드캐스트되는 데이터 페이로드.
+ * Server -> 나머지 방에 있는 사용자들에게 보내는 payload
+ * @direction Server -> Client (Broadcast)
+ * @event room:pt_left
+ */
+export interface PtLeftPayload {
+  /** Redis에서 삭제된 ptId */
+  ptId: string;
 }
 
 /**

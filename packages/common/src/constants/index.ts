@@ -18,6 +18,14 @@ export const SOCKET_EVENTS = {
   PT_DISCONNECT: 'room:pt_disconnect',
 
   /**
+   * 클라이언트가 방을 떠났을 때 발생.
+   * Redis에서 TTL 만료로 삭제되었을 때.
+   * 서버 -> 클라이언트 (브로드캐스트)
+   * - Payload: {@link PtLeftPayload}
+   */
+  PT_LEFT: 'room:pt_left',
+
+  /**
    * 방에 새로운 유저가 입장했음을 알림.
    * 서버 -> 클라이언트 (브로드캐스트)
    * - Payload: {@link PtJoinedPayload}

@@ -3,6 +3,7 @@ import {
   type JoinRoomPayload,
   SOCKET_EVENTS,
   Pt,
+  type PtLeftPayload,
 } from '@codejam/common';
 import { Logger } from '@nestjs/common';
 import {
@@ -73,7 +74,6 @@ export class CollaborationGateway
     if (roomId && ptId) {
       this.server.to(roomId).emit(SOCKET_EVENTS.PT_DISCONNECT, {
         ptId,
-        presence: 'offline',
       });
       this.logger.log(`👋 [DISCONNECT] PtId ${ptId} left room: ${roomId}`);
     }
@@ -105,6 +105,19 @@ export class CollaborationGateway
 
     // 다른 사람들에게 브로드케스트
     client.to(roomId).emit(SOCKET_EVENTS.UPDATE_FILE, payload);
+  }
+
+  /**
+   * Mock: Redis TTL 만료로 사용자가 삭제되었을 때 처리하는 로직
+   * 실제로는 Redis의 keyspace notification 또는 별도 스케줄러로 처리
+   */
+  private processPtLeftByTTL(roomId: string, ptId: string) {
+    this.logger.log(
+      `⏰ [PT_LEFT] PtId ${ptId} removed by TTL in room: ${roomId}`,
+    );
+
+    const payload: PtLeftPayload = { ptId };
+    this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, payload);
   }
 
   // ==================================================================

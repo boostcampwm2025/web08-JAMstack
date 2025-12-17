@@ -6,6 +6,7 @@ import {
   type RoomPtsPayload,
   type PtJoinedPayload,
   type PtDisconnectPayload,
+  type PtLeftPayload,
 } from '@codejam/common';
 
 export const useSocket = (roomId: string) => {
@@ -40,9 +41,11 @@ export const useSocket = (roomId: string) => {
     };
 
     const onPtDisconnect = (data: PtDisconnectPayload) => {
-      console.log(
-        `👋 [PT_DISCONNECT] PtId: ${data.ptId}, Presence: ${data.presence}`
-      );
+      console.log(`👋 [PT_DISCONNECT] PtId: ${data.ptId}`);
+    };
+
+    const onPtLeft = (data: PtLeftPayload) => {
+      console.log(`⏰ [PT_LEFT] PtId: ${data.ptId} removed by TTL expiration`);
     };
 
     const onRoomPts = (data: RoomPtsPayload) => {
@@ -65,6 +68,7 @@ export const useSocket = (roomId: string) => {
     socket.on('disconnect', onDisconnect);
     socket.on(SOCKET_EVENTS.PT_JOINED, onPtJoined);
     socket.on(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
+    socket.on(SOCKET_EVENTS.PT_LEFT, onPtLeft);
     socket.on(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
     socket.on(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
     socket.on(SOCKET_EVENTS.UPDATE_FILE, onUpdateCode);
@@ -74,6 +78,7 @@ export const useSocket = (roomId: string) => {
       socket.off('disconnect', onDisconnect);
       socket.off(SOCKET_EVENTS.PT_JOINED, onPtJoined);
       socket.off(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
+      socket.off(SOCKET_EVENTS.PT_LEFT, onPtLeft);
       socket.off(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
       socket.off(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
       socket.off(SOCKET_EVENTS.UPDATE_FILE, onUpdateCode);
