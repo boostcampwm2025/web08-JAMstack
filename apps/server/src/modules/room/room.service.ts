@@ -62,10 +62,20 @@ export class RoomService {
     await this.redis.set(key, JSON.stringify(pt), 'EX', 300); // 5분 TTL
   }
 
+  /**
+   * 방의 모든 참가자 조회
+   */
+  async getAllPts(roomId: string): Promise<Pt[]> {
+    const keys = await this.redis.keys(`room:${roomId}:pt:*`);
+    if (!keys.length) return [];
 
- // ================================
- // 랜덤 닉네임과 색상 생성
- // ================================
+    const values = await this.redis.mget(keys);
+    return values.filter(Boolean).map((v) => JSON.parse(v!));
+  }
+
+  // ================================
+  // 랜덤 닉네임과 색상 생성
+  // ================================
   private generateRandomNickname(): string {
     const names = ['Alice', 'Bob', 'Charlie', 'Dave', 'Eve', 'Frank'];
     return names[Math.floor(Math.random() * names.length)];
