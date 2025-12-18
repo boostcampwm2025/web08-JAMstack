@@ -8,6 +8,15 @@ import { randomBytes } from 'crypto';
 export class RoomService {
   constructor(@Inject('REDIS_CLIENT') private redis: Redis) {}
 
+  private readonly colors = [
+    '#ef4444',
+    '#22c55e',
+    '#3b82f6',
+    '#eab308',
+    '#a855f7',
+    '#ec4899',
+  ];
+
   /**
    * 새 참가자 생성 + Redis 저장
    */
@@ -67,7 +76,7 @@ export class RoomService {
   }
 
   /**
-   * disconnect 처리: presence를 offline으로 변경 + TTL 5분 설정
+   * disconnect 처리: presence를 offline으로 변경 + TTL 1분 설정
    */
   async disconnectPt(roomId: string, ptId: string): Promise<void> {
     const pt = await this.getPt(roomId, ptId);
@@ -75,7 +84,7 @@ export class RoomService {
 
     pt.presence = 'offline';
     const key = `room:${roomId}:pt:${ptId}`;
-    await this.redis.set(key, JSON.stringify(pt), 'EX', 5); // 5초 TTL
+    await this.redis.set(key, JSON.stringify(pt), 'EX', 60); // 60초 TTL
   }
 
   /**
@@ -88,7 +97,7 @@ export class RoomService {
     const values = await this.redis.mget(keys);
     const pts = values.filter(Boolean).map((v) => JSON.parse(v!));
 
-    return pts.sort((a, b) => a.joinedAt - b.joinedAt);
+    return pts.sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
   }
 
   /**
@@ -127,26 +136,14 @@ export class RoomService {
   }
 
   private async generateRandomColor(roomId: string): Promise<string> {
-    const colors = [
-      '#ef4444',
-      '#22c55e',
-      '#3b82f6',
-      '#eab308',
-      '#a855f7',
-      '#ec4899',
-    ];
-
     const pts = await this.getAllPts(roomId);
     const numColors = 6;
     const ptColors = pts.slice(-numColors).map((pt) => pt.color);
-    const availableColors = colors.filter((color) => !ptColors.includes(color));
+    const availableColors = this.colors.filter(
+      (color) => !ptColors.includes(color),
+    );
 
-    if (availableColors.length > 0) {
-      return availableColors[
-        Math.floor(Math.random() * availableColors.length)
-      ];
-    }
-
+    const colors = availableColors.length > 0 ? availableColors : this.colors;
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
@@ -158,11 +155,7 @@ export class RoomService {
     const numMaxEditor = 6;
 
     const pts = await this.getAllPts(roomId);
-    const editors = pts.filter((pt) => pt.role === 'editor');
-
-    if (editors.length < numMaxEditor) {
-      return 'editor';
-    }
+    if (pts.length < numMaxEditor) return 'editor';
 
     return 'viewer';
   }

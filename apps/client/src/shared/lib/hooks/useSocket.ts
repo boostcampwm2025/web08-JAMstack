@@ -79,8 +79,7 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
     const onWelcome = (data: WelcomePayload) => {
       console.log(`🎉 [WELCOME] My PtId: ${data.myPtId}`);
 
-      // 테스트를 위해 저장 해제
-      // localStorage.setItem(`ptId:${roomId}`, data.myPtId);
+      localStorage.setItem(`ptId:${roomId}`, data.myPtId);
 
       const { setMyPtId } = useRoomStore.getState();
       setMyPtId(data.myPtId);

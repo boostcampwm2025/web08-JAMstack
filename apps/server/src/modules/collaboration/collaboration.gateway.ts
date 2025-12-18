@@ -1,6 +1,7 @@
 import {
   Pt,
   SOCKET_EVENTS,
+  type PtUpdatePayload,
   type FileUpdatePayload,
   type AwarenessUpdatePayload,
   type JoinRoomPayload,
@@ -150,7 +151,7 @@ export class CollaborationGateway
     const file = this.fileService.getSafeFile(fileId);
     removeAwarenessStates(file.awareness, [client.data.clientId!], client);
 
-    // Redis에서 offline + TTL 5분 설정
+    // Redis에서 offline + TTL 1분 설정
     await this.roomService.disconnectPt(roomId, ptId);
 
     // socketMap에서 제거
@@ -295,21 +296,25 @@ export class CollaborationGateway
     this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, payload);
 
     // 권한 처리
+    // 정합성을 위해 배열 전체를 확인
 
     const numMaxEditor = 6;
+
     const pts = await this.roomService.getAllPts(roomId);
-
     const editors = pts.filter((p) => p.role === 'editor');
+    const viewers = pts.filter((p) => p.role === 'viewer');
 
-    // Editor 자리가 남아있고 Viewer 가 존재한다면 Promote
+    const vacancies = numMaxEditor - editors.length;
 
-    if (editors.length < numMaxEditor) {
-      const pt = pts.find((p) => p.role === 'viewer');
+    if (vacancies > 0 && viewers.length > 0) {
+      const candidates = viewers.slice(0, vacancies);
 
-      if (pt) {
-        pt.role = 'editor';
-        await this.roomService.setPt(roomId, pt);
-        this.server.to(roomId).emit(SOCKET_EVENTS.UPDATE_PT, { roomId, pt });
+      for (const candidate of candidates) {
+        candidate.role = 'editor';
+        await this.roomService.setPt(roomId, candidate);
+
+        const payload: PtUpdatePayload = { roomId, pt: candidate };
+        this.server.to(roomId).emit(SOCKET_EVENTS.UPDATE_PT, payload);
       }
     }
   }

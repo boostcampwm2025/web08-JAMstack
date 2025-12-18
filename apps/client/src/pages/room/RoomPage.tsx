@@ -19,7 +19,7 @@ function RoomPage() {
     <div className="flex flex-col h-screen">
       <Header />
       <main className="flex-1 overflow-hidden flex">
-        <div className="border-r h-full">
+        <div className="border-r h-full overflow-y-auto scrollbar-thin">
           <Participants />
         </div>
         <div className="flex-1 h-full">

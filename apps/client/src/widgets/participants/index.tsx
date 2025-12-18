@@ -9,7 +9,7 @@ export function Participants() {
   const count = sorted.length;
 
   return (
-    <div className="w-full max-w-xs bg-white dark:bg-gray-800 p-4 font-sans">
+    <div className="w-full min-w-3xs bg-white dark:bg-gray-800 p-4 font-sans">
       <h2 className="text-sm font-bold uppercase text-gray-700 dark:text-gray-200 border-b pb-2 mb-2">
         PARTICIPANTS ({count})
       </h2>
