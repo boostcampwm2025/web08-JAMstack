@@ -4,6 +4,7 @@ import { RoomModule } from './modules/room/room.module';
 import { CollaborationModule } from './modules/collaboration/collaboration.module';
 import { FileModule } from './modules/file/file.module';
 import { ConfigModule } from '@nestjs/config';
+import { RedisModule } from './config/redis.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -16,6 +17,7 @@ import * as Joi from 'joi';
         REDIS_PORT: Joi.number().required(),
       }),
     }),
+    RedisModule,
     AuthModule,
     RoomModule,
     CollaborationModule,

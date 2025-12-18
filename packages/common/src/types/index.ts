@@ -34,6 +34,9 @@ export interface JoinRoomPayload {
   /** 입장하려는 방의 고유 ID */
   roomId: string;
 
+  /** 사용자의 Awareness Client ID */
+  clientId: number;
+
   /** * 기존 세션 복원을 위한 참가자 ID.
    * - 최초 입장 시: `undefined` (서버가 새로 생성)
    * - 재접속 시: 로컬 스토리지 등에 저장된 `ptId`를 전송하여 정보 복원 요청
@@ -55,7 +58,7 @@ export interface FileUpdatePayload {
    * * @todo 추후 Yjs 등을 도입하여 CRDT 바이너리(Uint8Array) 형태로 고도화 예정.
    * @note 현재 단계에서는 단순 string 교체 방식으로 처리.
    */
-  code: string;
+  code: Uint8Array;
 }
 
 /**
@@ -98,6 +101,12 @@ export interface PtLeftPayload {
  * @event room:pts
  */
 export interface RoomPtsPayload {
+  /** 현재 방번호 */
+  roomId: string;
+
   /** 현재 방에 존재하는 모든 참가자(Pt) 목록 */
   pts: Pt[];
+
+  /** Awareness 정보 (Uint8Array) */
+  message: Uint8Array;
 }
