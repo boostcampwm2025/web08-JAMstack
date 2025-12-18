@@ -86,7 +86,9 @@ export class RoomService {
     if (!keys.length) return [];
 
     const values = await this.redis.mget(keys);
-    return values.filter(Boolean).map((v) => JSON.parse(v!));
+    const pts = values.filter(Boolean).map((v) => JSON.parse(v!));
+
+    return pts.sort((a, b) => a.joinedAt - b.joinedAt);
   }
 
   /**

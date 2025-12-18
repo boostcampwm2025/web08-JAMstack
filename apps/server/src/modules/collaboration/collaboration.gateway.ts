@@ -299,12 +299,18 @@ export class CollaborationGateway
     const numMaxEditor = 6;
     const pts = await this.roomService.getAllPts(roomId);
 
-    if (pts.length >= numMaxEditor && pts[numMaxEditor - 1].role === 'viewer') {
-      const pt = pts[pts.length - 1];
-      pt.role = 'editor';
+    const editors = pts.filter((p) => p.role === 'editor');
 
-      await this.roomService.setPt(roomId, pt);
-      this.server.to(roomId).emit(SOCKET_EVENTS.UPDATE_PT, { roomId, pt });
+    // Editor 자리가 남아있고 Viewer 가 존재한다면 Promote
+
+    if (editors.length < numMaxEditor) {
+      const pt = pts.find((p) => p.role === 'viewer');
+
+      if (pt) {
+        pt.role = 'editor';
+        await this.roomService.setPt(roomId, pt);
+        this.server.to(roomId).emit(SOCKET_EVENTS.UPDATE_PT, { roomId, pt });
+      }
     }
   }
 }
