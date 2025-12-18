@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: codejam-service
+    ports:
+      - "80:80"
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_HOST=10.0.2.6
+      - REDIS_PORT=6379
+    restart: always
+
