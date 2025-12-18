@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" fill="none">
+  <defs>
+    <style>
+      .brand {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                     "Segoe UI", Roboto, Ubuntu, Cantarell, sans-serif;
+        font-weight: 900;
+        font-size: 92px;
+        letter-spacing: -1.5px;
+        fill: #2F81F7;
+      }
+
+      .brand tspan {
+        fill: #33BD7F;
+      }
+
+      .slogan {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                     "Segoe UI", Roboto, sans-serif;
+        font-weight: 500;
+        font-size: 28px;
+        letter-spacing: -0.2px;
+        fill: #57606a;
+      }
+    </style>
+  </defs>
+
+  <g text-anchor="middle" transform="translate(400, 100)">
+    <text class="brand" y="0">
+      Code<tspan>Jam</tspan>
+      <animate attributeName="opacity" values="0;1" dur="2s" fill="freeze" />
+      <animateTransform attributeName="transform" type="translate" values="0 50; 0 0" dur="1.8s" fill="freeze" />
+    </text>
+    
+    <text class="slogan" y="60">
+      로그인 없이 바로 시작하는 실시간 협업 코드 에디터
+      <animate attributeName="opacity" values="0;1" begin="1s" dur="2s" fill="freeze" />
+      <animateTransform attributeName="transform" type="translate" values="0 30; 0 0" begin="1s" dur="1.8s" fill="freeze" />
+    </text>
+  </g>
+</svg>
