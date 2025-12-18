@@ -5,7 +5,7 @@ import {
   Pt,
   type PtLeftPayload,
 } from '@codejam/common';
-import { Logger } from '@nestjs/common';
+import { Logger, Inject, OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -16,6 +16,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Redis } from 'ioredis';
+import { RoomService } from '../room/room.service';
 
 @WebSocketGateway({
   cors: {
@@ -23,12 +25,50 @@ import { Server, Socket } from 'socket.io';
   },
 })
 export class CollaborationGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit
 {
   private readonly logger = new Logger(CollaborationGateway.name);
 
+  // socketId → { roomId, ptId } 매핑
+  private socketMap = new Map<string, { roomId: string; ptId: string }>();
+
+  constructor(
+    private readonly roomService: RoomService,
+    @Inject('REDIS_SUBSCRIBER') private readonly redisSubscriber: Redis,
+  ) {}
+
   @WebSocketServer()
   server: Server;
+
+  // ==================================================================
+  // Lifecycle Hooks
+  // ==================================================================
+
+  onModuleInit() {
+    this.subscribeToRedisExpiration();
+  }
+
+  /**
+   * Redis TTL 만료 이벤트 구독
+   * 키 형식: room:{roomId}:pt:{ptId}
+   */
+  private subscribeToRedisExpiration() {
+    // __keyevent@0__:expired 채널 구독 (DB 0번의 만료 이벤트)
+    this.redisSubscriber.subscribe('__keyevent@0__:expired');
+
+    this.redisSubscriber.on('message', (channel, expiredKey) => {
+      if (channel !== '__keyevent@0__:expired') return;
+
+      // 키 형식: room:{roomId}:pt:{ptId}
+      const match = expiredKey.match(/^room:(.+):pt:(.+)$/);
+      if (!match) return;
+
+      const [, roomId, ptId] = match;
+      this.processPtLeftByTTL(roomId, ptId);
+    });
+
+    this.logger.log('🔔 Subscribed to Redis keyspace expiration events');
+  }
 
   // ==================================================================
   // Entry Points
@@ -66,50 +106,71 @@ export class CollaborationGateway
     this.logger.log(`✅ Client Connected: ${client.id}`);
   }
 
-  private processDisconnect(client: Socket) {
+  private async processDisconnect(client: Socket) {
     this.logger.log(`❌ Client Disconnected: ${client.id}`);
 
-    const roomId = this.getMockRoomIdBySocket(client.id);
-    const ptId = this.getMockPtIdBySocket(client.id);
-    if (roomId && ptId) {
-      this.server.to(roomId).emit(SOCKET_EVENTS.PT_DISCONNECT, {
-        ptId,
-      });
-      this.logger.log(`👋 [DISCONNECT] PtId ${ptId} left room: ${roomId}`);
-    }
+    const info = this.socketMap.get(client.id);
+    if (!info) return;
+
+    const { roomId, ptId } = info;
+
+    // Redis에서 offline + TTL 5분 설정
+    await this.roomService.disconnectPt(roomId, ptId);
+
+    // socketMap에서 제거
+    this.socketMap.delete(client.id);
+
+    // 다른 사람들에게 알림
+    this.server.to(roomId).emit(SOCKET_EVENTS.PT_DISCONNECT, { ptId });
+    this.logger.log(`👋 [DISCONNECT] PtId ${ptId} left room: ${roomId}`);
   }
 
-  private processJoinRoom(client: Socket, payload: JoinRoomPayload) {
+  private async processJoinRoom(client: Socket, payload: JoinRoomPayload) {
     const { roomId, ptId: requestedPtId } = payload;
 
-    // Socket Join
+    // Socket room 입장
     client.join(roomId);
 
-    // 데이터 가져오기 - ptId가 있으면 재사용, 없으면 생성
-    const pt = this.createMockPt(client, requestedPtId);
-    const initialCode = this.getMockInitialCode(roomId);
+    // 참가자 생성 또는 복원
+    let pt: Pt | null = null;
+    if (requestedPtId) {
+      pt = await this.roomService.restorePt(roomId, requestedPtId);
+    }
+    if (!pt) {
+      pt = await this.roomService.createPt(roomId);
+    }
+
+    // socketMap에 매핑 저장
+    this.socketMap.set(client.id, { roomId, ptId: pt.ptId });
+
+    // 현재 참가자 목록 및 코드 조회
+    const allPts = await this.roomService.getAllPts(roomId);
+    const code = await this.roomService.getCode(roomId);
 
     this.logger.log(
       `📩 [JOIN] ${pt.nickname} (ptId: ${pt.ptId}) joined room: ${roomId}`,
     );
 
-    // 이벤트 브로드케스트
-    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
-    client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: [pt] });
-    client.emit(SOCKET_EVENTS.ROOM_FILES, { roomId, code: initialCode });
+    // 이벤트 전송
+    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt }); // 다른 사람들에게
+    client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: allPts }); // 본인에게 참가자 목록
+    client.emit(SOCKET_EVENTS.ROOM_FILES, { roomId, code }); // 본인에게 현재 코드
   }
 
-  private processCodeUpdate(client: Socket, payload: FileUpdatePayload) {
+  private async processCodeUpdate(client: Socket, payload: FileUpdatePayload) {
     const { roomId, code } = payload;
     this.logger.debug(`📝 [UPDATE] Room: ${roomId}, Length: ${code.length}`);
 
-    // 다른 사람들에게 브로드케스트
+    // Redis에 코드 저장
+    await this.roomService.saveCode(roomId, code);
+
+    // 다른 사람들에게 브로드캐스트
     client.to(roomId).emit(SOCKET_EVENTS.UPDATE_FILE, payload);
   }
 
   /**
-   * Mock: Redis TTL 만료로 사용자가 삭제되었을 때 처리하는 로직
-   * 실제로는 Redis의 keyspace notification 또는 별도 스케줄러로 처리
+   * Redis TTL 만료로 사용자가 삭제되었을 때 처리하는 로직
+   * Redis keyspace notification에서 자동 호출됨
    */
   private processPtLeftByTTL(roomId: string, ptId: string) {
     this.logger.log(
@@ -118,37 +179,5 @@ export class CollaborationGateway
 
     const payload: PtLeftPayload = { ptId };
     this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, payload);
-  }
-
-  // ==================================================================
-  // Helpers & Mocks
-  // TODO: 실제 로직으로 교체 필요
-  // ==================================================================
-
-  private getMockRoomIdBySocket(socketId: string): string {
-    return 'prototype';
-  }
-
-  private getMockPtIdBySocket(socketId: string): string | null {
-    // Mock: socketId를 기반으로 ptId 생성/조회
-    // 실제로는 DB나 메모리 저장소에서 조회해야 함
-    return `pt-${socketId.slice(0, 8)}`;
-  }
-
-  private createMockPt(client: Socket, requestedPtId?: string): Pt {
-    const ptId = requestedPtId || `pt-${client.id.slice(0, 8)}`;
-
-    return {
-      ptId,
-      nickname: `Guest-${ptId.slice(3, 7)}`,
-      role: 'editor', // Mock: 기본값으로 editor 설정
-      color: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      presence: 'online',
-      joinedAt: new Date().toISOString(),
-    };
-  }
-
-  private getMockInitialCode(roomId: string): string {
-    return `// Initial code for room: ${roomId}\n// Waiting for synchronization...`;
   }
 }

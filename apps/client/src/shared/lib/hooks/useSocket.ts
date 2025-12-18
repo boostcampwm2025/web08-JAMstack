@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { socket } from '@/shared/api/socket';
+import { useCallback, useEffect, useState } from "react";
+import { socket } from "@/shared/api/socket";
 import {
   SOCKET_EVENTS,
   type FileUpdatePayload,
@@ -7,7 +7,7 @@ import {
   type PtJoinedPayload,
   type PtDisconnectPayload,
   type PtLeftPayload,
-} from '@codejam/common';
+} from "@codejam/common";
 
 export const useSocket = (roomId: string) => {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -23,16 +23,20 @@ export const useSocket = (roomId: string) => {
     // ==================================================================
 
     const onConnect = () => {
-      console.log('🟢 Connected to Socket Server');
+      console.log("🟢 Connected to Socket Server");
       setIsConnected(true);
+
+      // localStorage에서 기존 ptId 조회 (재접속용)
+      const savedPtId = localStorage.getItem(`ptId:${roomId}`);
 
       socket.emit(SOCKET_EVENTS.JOIN_ROOM, {
         roomId,
+        ptId: savedPtId || undefined,
       });
     };
 
     const onDisconnect = () => {
-      console.log('🔴 Disconnected');
+      console.log("🔴 Disconnected");
       setIsConnected(false);
     };
 
@@ -50,6 +54,12 @@ export const useSocket = (roomId: string) => {
 
     const onRoomPts = (data: RoomPtsPayload) => {
       console.log(`👥 [ROOM_PTS] Count: ${data.pts.length}`, data.pts);
+
+      // 본인의 ptId를 localStorage에 저장 (가장 최근 입장한 사람 = 본인)
+      const myPt = data.pts[data.pts.length - 1];
+      if (myPt) {
+        localStorage.setItem(`ptId:${roomId}`, myPt.ptId);
+      }
     };
 
     const onRoomFiles = (data: FileUpdatePayload) => {
@@ -64,8 +74,8 @@ export const useSocket = (roomId: string) => {
     // 리스너 등록
     // ==================================================================
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
     socket.on(SOCKET_EVENTS.PT_JOINED, onPtJoined);
     socket.on(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
     socket.on(SOCKET_EVENTS.PT_LEFT, onPtLeft);
@@ -74,8 +84,8 @@ export const useSocket = (roomId: string) => {
     socket.on(SOCKET_EVENTS.UPDATE_FILE, onUpdateCode);
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
       socket.off(SOCKET_EVENTS.PT_JOINED, onPtJoined);
       socket.off(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
       socket.off(SOCKET_EVENTS.PT_LEFT, onPtLeft);
