@@ -20,18 +20,16 @@ FROM node:20-slim
 RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# 프론트엔드 빌드 결과물을 nginx 경로로 복사
+# 1. 프론트엔드 빌드 결과물 복사
 COPY --from=builder /app/apps/client/dist /usr/share/nginx/html
 
-# 백엔드 실행에 필요한 파일들 복사
-# pnpm의 심볼릭 링크 구조를 유지하기 위해 필요한 모든 경로를 복사합니다.
+# 2. 백엔드 실행을 위해 프로젝트 구조 전체를 유지하며 복사 (pnpm 심볼릭 링크 보존용)
+# 루트 node_modules(.pnpm 포함)와 서버 앱, 공통 패키지를 모두 가져옵니다.
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/common/dist ./packages/common/dist
-COPY --from=builder /app/apps/server/dist ./dist
-COPY --from=builder /app/apps/server/node_modules ./apps/server/node_modules
-COPY --from=builder /app/apps/server/package.json ./package.json
+COPY --from=builder /app/apps/server ./apps/server
 
-# 설정 파일 복사
+# 3. 설정 파일 복사
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
@@ -39,4 +37,6 @@ RUN chmod +x ./start.sh
 # 80(Nginx), 3000(NestJS) 포트 개방
 EXPOSE 80 3000
 
-CMD ["./start.sh"]
+# 4. 백엔드 앱 폴더에서 실행해야 상대 경로로 패키지들을 찾을 수 있습니다.
+WORKDIR /app/apps/server
+CMD ["/app/start.sh"]
