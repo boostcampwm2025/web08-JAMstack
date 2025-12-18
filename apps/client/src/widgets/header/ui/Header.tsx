@@ -1,7 +1,19 @@
-import { PROJECT_NAME } from '@codejam/common';
-import { useState } from 'react';
-import LogoAnimation from '@/assets/logo_animation.svg';
-import { Button } from '@/shared/ui/button';
+import { PROJECT_NAME } from "@codejam/common";
+import { useState } from "react";
+import LogoAnimation from "@/assets/logo_animation.svg";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/shared/ui/dialog";
 import {
   Check,
   Copy,
@@ -11,9 +23,9 @@ import {
   Settings,
   Sun,
   Moon,
-} from 'lucide-react';
+} from "lucide-react";
 
-const roomId = 'PROTOTYPE';
+const roomId = "PROTOTYPE";
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false);
@@ -21,7 +33,7 @@ export default function Header() {
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
+    document.documentElement.classList.toggle("dark");
   };
 
   const copyRoomId = async () => {
@@ -30,7 +42,7 @@ export default function Header() {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      alert('복사에 실패했습니다.');
+      alert("복사에 실패했습니다.");
     }
   };
 
@@ -78,7 +90,7 @@ export default function Header() {
           variant="ghost"
           size="sm"
           className="gap-1.5 text-xs h-8"
-          onClick={() => handleNotImplemented('Upload')}
+          onClick={() => handleNotImplemented("Upload")}
         >
           <Upload className="h-4 w-4" />
           <span>Upload</span>
@@ -87,7 +99,7 @@ export default function Header() {
           variant="ghost"
           size="sm"
           className="gap-1.5 text-xs h-8"
-          onClick={() => handleNotImplemented('Download')}
+          onClick={() => handleNotImplemented("Download")}
         >
           <Download className="h-4 w-4" />
           <span>Download</span>
@@ -96,25 +108,55 @@ export default function Header() {
           variant="ghost"
           size="sm"
           className="gap-1.5 text-xs h-8"
-          onClick={() => handleNotImplemented('Copy')}
+          onClick={() => handleNotImplemented("Copy")}
         >
           <Copy className="h-4 w-4" />
           <span>Copy</span>
         </Button>
+
+        {/* 공유 다이얼로그 */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+              <Share2 className="h-4 w-4" />
+              <span>Share</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Link</DialogTitle>
+              <DialogDescription>
+                현재 페이지의 링크를 복사하여 다른 사람에게 공유해보세요.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="link" className="sr-only">
+                  Link
+                </Label>
+                <Input
+                  id="link"
+                  defaultValue={window.location.href}
+                  readOnly
+                  className="h-9"
+                />
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" size="sm">
+                  Close
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Button
           variant="ghost"
           size="sm"
           className="gap-1.5 text-xs h-8"
-          onClick={() => handleNotImplemented('Share')}
-        >
-          <Share2 className="h-4 w-4" />
-          <span>Share</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-xs h-8"
-          onClick={() => handleNotImplemented('Settings')}
+          onClick={() => handleNotImplemented("Settings")}
         >
           <Settings className="h-4 w-4" />
           <span>Settings</span>
