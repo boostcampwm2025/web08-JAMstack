@@ -3,6 +3,7 @@ import { useState } from 'react';
 import LogoAnimation from '@/assets/logo_animation.svg';
 import { Button } from '@/shared/ui/button';
 import {
+  Check,
   Copy,
   Upload,
   Download,
@@ -16,14 +17,25 @@ const roomId = 'PROTOTYPE';
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle('dark');
   };
 
-  const copyRoomId = () => {
-    navigator.clipboard.writeText(roomId);
+  const copyRoomId = async () => {
+    try {
+      await navigator.clipboard.writeText(roomId);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      alert('복사에 실패했습니다.');
+    }
+  };
+
+  const handleNotImplemented = (feature: string) => {
+    alert(`${feature} 기능은 아직 구현되지 않았습니다.`);
   };
 
   return (
@@ -51,30 +63,59 @@ export default function Header() {
             className="h-4 w-4 p-0 hover:bg-transparent"
             onClick={copyRoomId}
           >
-            <Copy className="h-3 w-3" />
+            {isCopied ? (
+              <Check className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
           </Button>
         </div>
       </div>
 
       {/* 우측 액션 버튼들 */}
       <div className="ml-auto flex items-center gap-1">
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={() => handleNotImplemented('Upload')}
+        >
           <Upload className="h-4 w-4" />
           <span>Upload</span>
         </Button>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={() => handleNotImplemented('Download')}
+        >
           <Download className="h-4 w-4" />
           <span>Download</span>
         </Button>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={() => handleNotImplemented('Copy')}
+        >
           <Copy className="h-4 w-4" />
           <span>Copy</span>
         </Button>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={() => handleNotImplemented('Share')}
+        >
           <Share2 className="h-4 w-4" />
           <span>Share</span>
         </Button>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs h-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs h-8"
+          onClick={() => handleNotImplemented('Settings')}
+        >
           <Settings className="h-4 w-4" />
           <span>Settings</span>
         </Button>
