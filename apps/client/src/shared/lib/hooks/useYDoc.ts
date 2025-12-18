@@ -1,13 +1,13 @@
-import { Doc } from 'yjs';
-import { writeUpdate } from 'y-protocols/sync';
-import { Awareness, encodeAwarenessUpdate } from 'y-protocols/awareness';
-import { useEffect, useMemo } from 'react';
-import { useSocket } from './useSocket';
-import type { Socket } from 'socket.io-client';
-import { createEncoder, toUint8Array } from 'lib0/encoding';
-import { SOCKET_EVENTS } from '@codejam/common';
+import { Doc } from "yjs";
+import { writeUpdate } from "y-protocols/sync";
+import { Awareness, encodeAwarenessUpdate } from "y-protocols/awareness";
+import { useEffect, useMemo } from "react";
+import { useSocket } from "./useSocket";
+import type { Socket } from "socket.io-client";
+import { createEncoder, toUint8Array } from "lib0/encoding";
+import { SOCKET_EVENTS } from "@codejam/common";
 
-const ROOM_ID = 'prototype';
+const ROOM_ID = "prototype";
 
 type AwarenessUpdate = {
   added: number[];
@@ -16,61 +16,61 @@ type AwarenessUpdate = {
 };
 
 export const useYDoc = (key: string) => {
-    const yDoc = useMemo(() => new Doc(), []);
-    const yText = useMemo(() => yDoc.getText(key), [yDoc, key]);
-    const awareness = useMemo(() => new Awareness(yDoc), [yDoc]);
+  const yDoc = useMemo(() => new Doc(), []);
+  const yText = useMemo(() => yDoc.getText(key), [yDoc, key]);
+  const awareness = useMemo(() => new Awareness(yDoc), [yDoc]);
 
-    const { socket, isConnected } = useSocket(ROOM_ID, yDoc, awareness);
+  const { socket, isConnected } = useSocket(ROOM_ID, yDoc, awareness);
 
-    useEffect(() => {
-        const yDocUpdate = (update: Uint8Array, origin: 'remote' | Socket) => {
-            if (!isConnected || origin === 'remote') {
-                return;
-            }
+  useEffect(() => {
+    const yDocUpdate = (update: Uint8Array, origin: "remote" | Socket) => {
+      if (!isConnected || origin === "remote") {
+        return;
+      }
 
-            const encoder = createEncoder();
-            writeUpdate(encoder, update);
-            const code = toUint8Array(encoder);
-            
-            socket.emit(SOCKET_EVENTS.UPDATE_FILE, {
-                roomId: ROOM_ID,
-                code,
-            });
-        };
+      const encoder = createEncoder();
+      writeUpdate(encoder, update);
+      const code = toUint8Array(encoder);
 
-        const awarenessUpdate = ({ added, removed, updated }: AwarenessUpdate, origin: 'remote' | Socket) => {
-            if (!isConnected || origin === 'remote') {
-                return;
-            }
+      socket.emit(SOCKET_EVENTS.UPDATE_FILE, {
+        roomId: ROOM_ID,
+        code,
+      });
+    };
 
-            const changed = added.concat(updated, removed);
-            if (changed.length === 0) {
-                return;
-            }
+    const awarenessUpdate = (
+      { added, removed, updated }: AwarenessUpdate,
+      origin: "remote" | Socket
+    ) => {
+      if (!isConnected || origin === "remote") {
+        return;
+      }
 
-            const message = encodeAwarenessUpdate(awareness, changed);
-            socket.emit(SOCKET_EVENTS.ROOM_PTS, { 
-                roomId: ROOM_ID,
-                pts: [],
-                message,
-            });
-        };
+      const changed = added.concat(updated, removed);
+      if (changed.length === 0) {
+        return;
+      }
 
-        yDoc.on('update', yDocUpdate);
-        awareness.on('update', awarenessUpdate);
+      const message = encodeAwarenessUpdate(awareness, changed);
 
-        const handleUnload = () => {
-            awareness.setLocalState(null);
-        }
+      socket.emit(SOCKET_EVENTS.UPDATE_AWARENESS, { message });
+    };
 
-        window.addEventListener('beforeunload', handleUnload);
+    yDoc.on("update", yDocUpdate);
+    awareness.on("update", awarenessUpdate);
 
-        return () => {
-            window.removeEventListener('beforeunload', handleUnload);
-            yDoc.off('update', yDocUpdate);
-            awareness.off('update', awarenessUpdate);
-        }
-    }, [key, isConnected, socket]);
+    const handleUnload = () => {
+      awareness.setLocalState(null);
+    };
 
-    return { yDoc, yText, awareness };
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      yDoc.off("update", yDocUpdate);
+      awareness.off("update", awarenessUpdate);
+    };
+  }, [key, isConnected, socket]);
+
+  return { yDoc, yText, awareness };
 };

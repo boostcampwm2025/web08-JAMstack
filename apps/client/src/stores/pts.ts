@@ -1,22 +1,35 @@
 import { create } from "zustand";
 import type { Pt } from "@codejam/common";
-import { data } from "@/widgets/participants/data";
 
 interface PtsState {
   pts: Record<string, Pt>;
 
   setPts: (pts: Record<string, Pt>) => void;
   setPt: (ptId: string, pt: Pt) => void;
+  removePt: (ptId: string) => void;
+
+  updatePtPresence: (ptId: string, presence: Pt["presence"]) => void;
 }
 
-// TODO: Mock 데이터 제거
-// pts 를 {} 로 초기화
-
 export const usePtsStore = create<PtsState>((set) => ({
-  pts: data,
+  pts: {},
 
   setPts: (newPts) => set({ pts: newPts }),
   setPt: (ptId, pt) => set((state) => ({ pts: { ...state.pts, [ptId]: pt } })),
+
+  removePt: (ptId) =>
+    set((state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [ptId]: _, ...rest } = state.pts;
+      return { pts: rest };
+    }),
+
+  updatePtPresence: (ptId, presence) =>
+    set((state) => {
+      const pt = state.pts[ptId];
+      if (!pt) return state;
+      return { pts: { ...state.pts, [ptId]: { ...pt, presence } } };
+    }),
 }));
 
 export const usePts = () => {

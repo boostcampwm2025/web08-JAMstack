@@ -138,10 +138,9 @@ export class FileService {
       const changed = added.concat(updated, removed);
       const message = encodeAwarenessUpdate(awareness, changed);
       if (origin && origin instanceof Socket) {
-        origin.to(roomId).emit(SOCKET_EVENTS.ROOM_PTS, {
-          roomId,
-          message,
-        });
+        origin
+          .to(roomId)
+          .emit(SOCKET_EVENTS.UPDATE_AWARENESS, { roomId, message });
       }
     };
   }

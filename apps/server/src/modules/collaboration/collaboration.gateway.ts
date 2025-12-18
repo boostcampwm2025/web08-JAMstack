@@ -1,10 +1,10 @@
 import {
-  type FileUpdatePayload,
-  type JoinRoomPayload,
-  SOCKET_EVENTS,
   Pt,
+  SOCKET_EVENTS,
+  type FileUpdatePayload,
+  type AwarenessUpdatePayload,
+  type JoinRoomPayload,
   type PtLeftPayload,
-  type RoomPtsPayload,
 } from '@codejam/common';
 import { Logger, Inject, OnModuleInit } from '@nestjs/common';
 import {
@@ -119,15 +119,15 @@ export class CollaborationGateway
     @ConnectedSocket() client: CollabSocket,
     @MessageBody() payload: FileUpdatePayload,
   ) {
-    this.processCodeUpdate(client, payload);
+    this.processFileUpdate(client, payload);
   }
 
-  @SubscribeMessage(SOCKET_EVENTS.ROOM_PTS)
+  @SubscribeMessage(SOCKET_EVENTS.UPDATE_AWARENESS)
   handlePtUpdate(
     @ConnectedSocket() client: CollabSocket,
-    @MessageBody() payload: RoomPtsPayload,
+    @MessageBody() payload: AwarenessUpdatePayload,
   ) {
-    this.processPtsUpdate(client, payload);
+    this.processAwarenessUpdate(client, payload);
   }
 
   // ==================================================================
@@ -185,29 +185,35 @@ export class CollaborationGateway
       fileId: 'prototype',
     });
 
-    // 현재 참가자 목록 및 코드 조회
-    // const allPts = await this.roomService.getAllPts(roomId);
-
     this.logger.log(
       `📩 [JOIN] ${pt.nickname} (ptId: ${pt.ptId}) joined room: ${roomId}`,
     );
 
     // 이벤트 전송
-    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt }); // 다른 사람들에게 지금 들어온 사람 알리기client.emit(SOCKET_EVENTS.ROOM_PTS, { pts: allPts }); // 본인에게 참가자 목록
+
+    // 다른 사람들에게 지금 들어온 사람 알리기
+
+    client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
+
+    // 본인에게 참가자 목록 전송
+
+    const allPts = await this.roomService.getAllPts(roomId);
+    client.emit(SOCKET_EVENTS.ROOM_PTS, { roomId, pts: allPts });
 
     // 파일이 없으면 새로 생성 및 Doc, Awareness 이벤트 브로드케스트
     // TODO: 별도의 파일을 요청하는 SubscribeMessage 추가
+
     const file = this.fileService.createFile(
       this.server,
       'javascript',
       'prototype',
     );
 
-    this.startSyncDoc(file, client); // SOCKET_EVENTS.ROOM_FILE
-    this.startSyncPt(file, client); // SOCKET_EVENTS.ROOM_PTS
+    this.startSyncFiles(file, client); // SOCKET_EVENTS.ROOM_FILES
+    this.startSyncAwarenesses(file, client); // SOCKET_EVENTS.ROOM_AWARENESSES
   }
 
-  private processCodeUpdate(client: CollabSocket, payload: FileUpdatePayload) {
+  private processFileUpdate(client: CollabSocket, payload: FileUpdatePayload) {
     const { roomId, code } = payload;
     this.logger.debug(`📝 [UPDATE] Room: ${roomId}, Length: ${code.length}`);
 
@@ -228,12 +234,13 @@ export class CollaborationGateway
     }
   }
 
-  private processPtsUpdate(client: CollabSocket, payload: RoomPtsPayload) {
+  private processAwarenessUpdate(
+    client: CollabSocket,
+    payload: AwarenessUpdatePayload,
+  ) {
     const { message } = payload;
     const info = this.socketMap.get(client.id);
-    if (!info) {
-      return;
-    }
+    if (!info) return;
 
     const { fileId } = info;
     const file = this.fileService.getSafeFile(fileId);
@@ -241,7 +248,7 @@ export class CollaborationGateway
     applyAwarenessUpdate(file.awareness, message, client);
   }
 
-  private startSyncDoc(room: RoomFile, client: CollabSocket) {
+  private startSyncFiles(room: RoomFile, client: CollabSocket) {
     const update = encodeStateAsUpdate(room.doc);
     const encoder = createEncoder();
     writeUpdate(encoder, update);
@@ -252,10 +259,10 @@ export class CollaborationGateway
     });
   }
 
-  private startSyncPt(room: RoomFile, client: CollabSocket) {
+  private startSyncAwarenesses(room: RoomFile, client: CollabSocket) {
     const ids = Array.from(room.awareness.getStates().keys());
     const message = encodeAwarenessUpdate(room.awareness, ids);
-    client.emit(SOCKET_EVENTS.ROOM_PTS, {
+    client.emit(SOCKET_EVENTS.ROOM_AWARENESSES, {
       roomId: room.roomId,
       message,
     });
