@@ -8,8 +8,13 @@ import {
   type PtDisconnectPayload,
   type PtLeftPayload,
 } from '@codejam/common';
+import { createDecoder } from 'lib0/decoding';
+import { createEncoder, toUint8Array } from 'lib0/encoding';
+import { readSyncMessage } from 'y-protocols/sync.js';
+import { type Doc } from 'yjs';
+import { applyAwarenessUpdate, type Awareness } from 'y-protocols/awareness.js';
 
-export const useSocket = (roomId: string) => {
+export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
   const [isConnected, setIsConnected] = useState(socket.connected);
 
   useEffect(() => {
@@ -28,8 +33,28 @@ export const useSocket = (roomId: string) => {
 
       socket.emit(SOCKET_EVENTS.JOIN_ROOM, {
         roomId,
+        clientId: yDoc.clientID,
       });
     };
+
+    const convertU8 = (code: Uint8Array | ArrayBuffer): Uint8Array => {
+      if (code instanceof ArrayBuffer) return new Uint8Array(code);
+      return code;
+    }
+
+    const handleSync = (code: Uint8Array | ArrayBuffer) => {
+      const u8 = convertU8(code);
+      
+      const decoder = createDecoder(u8);
+      const encoder = createEncoder();
+
+      readSyncMessage(decoder, encoder, yDoc, 'remote');
+
+      const reply = toUint8Array(encoder);
+      if (reply.byteLength > 0) {
+        socket.emit(SOCKET_EVENTS.UPDATE_FILE, { roomId, code: reply });
+      }
+    }
 
     const onDisconnect = () => {
       console.log('🔴 Disconnected');
@@ -50,14 +75,21 @@ export const useSocket = (roomId: string) => {
 
     const onRoomPts = (data: RoomPtsPayload) => {
       console.log(`👥 [ROOM_PTS] Count: ${data.pts.length}`, data.pts);
+      const { message } = data;
+      const u8 = convertU8(message);
+      applyAwarenessUpdate(awareness, u8, 'remote');
     };
 
     const onRoomFiles = (data: FileUpdatePayload) => {
       console.log(`📁 [ROOM_FILES] Length: ${data.code.length}`);
+      const { code } = data;
+      handleSync(code);
     };
 
     const onUpdateCode = (data: FileUpdatePayload) => {
       console.log(`📝 [UPDATE_FILE] From Server (Length: ${data.code.length})`);
+      const { code } = data;
+      handleSync(code);
     };
 
     // ==================================================================
