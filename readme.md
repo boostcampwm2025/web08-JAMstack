@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://codejam.example.com"> <!-- 실제 배포 주소로 수정 필요 -->
+  <a href="http://49.50.138.93/room/prototype"> 
     <img src="https://img.shields.io/badge/Service-Prototype-2F81F7?style=for-the-badge&logo=rocket" alt="Live Demo" />
   </a>
   <a href="./LICENSE">
