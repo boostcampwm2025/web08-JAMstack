@@ -191,6 +191,8 @@ export class CollaborationGateway
 
     // 이벤트 전송
 
+    client.emit(SOCKET_EVENTS.WELCOME, { myPtId: pt.ptId });
+
     // 다른 사람들에게 지금 들어온 사람 알리기
 
     client.to(roomId).emit(SOCKET_EVENTS.PT_JOINED, { pt });
@@ -284,12 +286,25 @@ export class CollaborationGateway
    * Redis TTL 만료로 사용자가 삭제되었을 때 처리하는 로직
    * Redis keyspace notification에서 자동 호출됨
    */
-  private processPtLeftByTTL(roomId: string, ptId: string) {
+  private async processPtLeftByTTL(roomId: string, ptId: string) {
     this.logger.log(
       `⏰ [PT_LEFT] PtId ${ptId} removed by TTL in room: ${roomId}`,
     );
 
     const payload: PtLeftPayload = { ptId };
     this.server.to(roomId).emit(SOCKET_EVENTS.PT_LEFT, payload);
+
+    // 권한 처리
+
+    const numMaxEditor = 6;
+    const pts = await this.roomService.getAllPts(roomId);
+
+    if (pts.length >= numMaxEditor && pts[numMaxEditor - 1].role === 'viewer') {
+      const pt = pts[pts.length - 1];
+      pt.role = 'editor';
+
+      await this.roomService.setPt(roomId, pt);
+      this.server.to(roomId).emit(SOCKET_EVENTS.UPDATE_PT, { roomId, pt });
+    }
   }
 }

@@ -11,6 +11,11 @@ export const SOCKET_EVENTS = {
   JOIN_ROOM: "room:join",
 
   /**
+   * 서버에서 클라이언트로 초기 설정 및 환영 메시지를 보낼 때 사용.
+   * */
+  WELCOME: "room:welcome",
+
+  /**
    * 클라이언트가 방을 떠나거나 연결이 끊어졌을 때 발생.
    * 서버 -> 클라이언트 (브로드캐스트)
    * - Payload: {@link PtDisconnectPayload}

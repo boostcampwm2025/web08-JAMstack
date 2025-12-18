@@ -11,6 +11,10 @@ const roleOrder = (role: Pt["role"]) => {
   return 3; // viewer
 };
 
+const timeOrder = (time: Pt["joinedAt"]) => {
+  return new Date(time).getTime();
+};
+
 const nicknameCompare = (x: Pt["nickname"], y: Pt["nickname"]) => {
   return x.localeCompare(y);
 };
@@ -21,10 +25,10 @@ export const sorter = (a: Pt, b: Pt) => {
   const onlineB = onlineOrder(b.presence);
   if (onlineA !== onlineB) return onlineA - onlineB;
 
-  // 역할 순서로 정렬
-  const roleA = roleOrder(a.role);
-  const roleB = roleOrder(b.role);
-  if (roleA !== roleB) return roleA - roleB;
+  // 들어온 시간 순서로 정렬
+  const timeA = timeOrder(a.joinedAt);
+  const timeB = timeOrder(b.joinedAt);
+  if (timeA !== timeB) return timeA - timeB;
 
   // 닉네임 순으로 정렬
   return nicknameCompare(a.nickname, b.nickname);

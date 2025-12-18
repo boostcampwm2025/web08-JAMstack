@@ -2,6 +2,7 @@ import { Pt } from '@codejam/common';
 import { Injectable, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class RoomService {
@@ -12,11 +13,18 @@ export class RoomService {
    */
   async createPt(roomId: string): Promise<Pt> {
     const ptId = uuidv4();
+    const nickname = this.generateRandomNickname();
+
+    const [color, role] = await Promise.all([
+      this.generateRandomColor(roomId),
+      this.generateRole(roomId),
+    ]);
+
     const pt: Pt = {
       ptId,
-      nickname: this.generateRandomNickname(),
-      color: this.generateRandomColor(),
-      role: 'editor',
+      nickname,
+      color,
+      role,
       presence: 'online',
       joinedAt: new Date().toISOString(),
     };
@@ -32,6 +40,14 @@ export class RoomService {
   async getPt(roomId: string, ptId: string): Promise<Pt | null> {
     const data = await this.redis.get(`room:${roomId}:pt:${ptId}`);
     return data ? (JSON.parse(data) as Pt) : null;
+  }
+
+  /**
+   * Redis에서 특정 roomId와 ptId를 가진 pt 저장
+   */
+  async setPt(roomId: string, pt: Pt): Promise<void> {
+    const key = `room:${roomId}:pt:${pt.ptId}`;
+    await this.redis.set(key, JSON.stringify(pt));
   }
 
   /**
@@ -59,7 +75,7 @@ export class RoomService {
 
     pt.presence = 'offline';
     const key = `room:${roomId}:pt:${ptId}`;
-    await this.redis.set(key, JSON.stringify(pt), 'EX', 300); // 5분 TTL
+    await this.redis.set(key, JSON.stringify(pt), 'EX', 5); // 5초 TTL
   }
 
   /**
@@ -99,12 +115,16 @@ export class RoomService {
   // ================================
   // 랜덤 닉네임과 색상 생성
   // ================================
-  private generateRandomNickname(): string {
-    const names = ['Alice', 'Bob', 'Charlie', 'Dave', 'Eve', 'Frank'];
-    return names[Math.floor(Math.random() * names.length)];
+
+  private generateRandomNickname(length: number = 10): string {
+    return randomBytes(length * 2)
+      .toString('base64')
+      .replace(/[^a-z0-9]/gi, '')
+      .toLowerCase()
+      .substring(0, length);
   }
 
-  private generateRandomColor(): string {
+  private async generateRandomColor(roomId: string): Promise<string> {
     const colors = [
       '#ef4444',
       '#22c55e',
@@ -113,6 +133,35 @@ export class RoomService {
       '#a855f7',
       '#ec4899',
     ];
+
+    const pts = await this.getAllPts(roomId);
+    const numColors = 6;
+    const ptColors = pts.slice(-numColors).map((pt) => pt.color);
+    const availableColors = colors.filter((color) => !ptColors.includes(color));
+
+    if (availableColors.length > 0) {
+      return availableColors[
+        Math.floor(Math.random() * availableColors.length)
+      ];
+    }
+
     return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  // ================================
+  // 참가자 권한 부여 로직
+  // ================================
+
+  private async generateRole(roomId) {
+    const numMaxEditor = 6;
+
+    const pts = await this.getAllPts(roomId);
+    const editors = pts.filter((pt) => pt.role === 'editor');
+
+    if (editors.length < numMaxEditor) {
+      return 'editor';
+    }
+
+    return 'viewer';
   }
 }

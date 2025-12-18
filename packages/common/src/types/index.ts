@@ -44,6 +44,14 @@ export interface JoinRoomPayload {
   ptId?: string;
 }
 
+/**
+ * 서버에서 클라이언트로 전송되는 초기 설정 및 환영 메시지.
+ * - Direction: Server -> Client
+ */
+export interface WelcomePayload {
+  myPtId: string;
+}
+
 export interface RoomPtsPayload {
   /** 현재 방번호 */
   roomId: string;

@@ -9,11 +9,13 @@ import {
   type RoomPtsPayload,
   type RoomFilesPayload,
   type RoomAwarenessesPayload,
+  type WelcomePayload,
   type PtJoinedPayload,
   type PtDisconnectPayload,
   type PtLeftPayload,
 } from "@codejam/common";
 import { usePtsStore } from "@/stores/pts";
+import { useRoomStore } from "@/stores/room";
 import { createDecoder } from "lib0/decoding";
 import { createEncoder, toUint8Array } from "lib0/encoding";
 import { readSyncMessage } from "y-protocols/sync.js";
@@ -74,6 +76,14 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
       setIsConnected(false);
     };
 
+    const onWelcome = (data: WelcomePayload) => {
+      console.log(`🎉 [WELCOME] My PtId: ${data.myPtId}`);
+      localStorage.setItem(`ptId:${roomId}`, data.myPtId);
+
+      const { setMyPtId } = useRoomStore.getState();
+      setMyPtId(data.myPtId);
+    };
+
     const onPtJoined = (data: PtJoinedPayload) => {
       console.log(`👋 [PT_JOINED] ${data.pt.nickname}`);
 
@@ -83,6 +93,13 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
 
     const onPtDisconnect = (data: PtDisconnectPayload) => {
       console.log(`👋 [PT_DISCONNECT] PtId: ${data.ptId}`);
+
+      const pt = usePtsStore.getState().pts[data.ptId];
+      if (!pt) return;
+
+      const { setPt } = usePtsStore.getState();
+      pt.presence = "offline";
+      setPt(pt.ptId, pt);
     };
 
     const onPtLeft = (data: PtLeftPayload) => {
@@ -97,22 +114,13 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
 
       const pts: Pt[] = data.pts;
 
-      const newPts: Record<string, Pt> = {};
-      for (const pt of pts) {
-        newPts[pt.ptId] = pt;
-      }
+      const newPts: Record<string, Pt> = pts.reduce((acc, pt) => {
+        acc[pt.ptId] = pt;
+        return acc;
+      }, {} as Record<string, Pt>);
 
       const { setPts } = usePtsStore.getState();
       setPts(newPts);
-
-      // 본인의 ptId를 localStorage에 저장 (가장 최근 입장한 사람 = 본인)
-
-      // TODO: WELCOME 이벤트를 정의하고, WELCOME Payload 로 my ptId 를 보낸다
-
-      // const myPt = data.pts[data.pts.length - 1];
-      // if (myPt) {
-      //   localStorage.setItem(`ptId:${roomId}`, myPt.ptId);
-      // }
     };
 
     const onRoomFiles = (data: RoomFilesPayload) => {
@@ -162,24 +170,28 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    socket.on(SOCKET_EVENTS.WELCOME, onWelcome);
     socket.on(SOCKET_EVENTS.PT_JOINED, onPtJoined);
     socket.on(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
     socket.on(SOCKET_EVENTS.PT_LEFT, onPtLeft);
     socket.on(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
     socket.on(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
     socket.on(SOCKET_EVENTS.ROOM_AWARENESSES, onRoomAwarenesses);
+    socket.on(SOCKET_EVENTS.UPDATE_PT, onUpdatePt);
     socket.on(SOCKET_EVENTS.UPDATE_FILE, onUpdateFile);
     socket.on(SOCKET_EVENTS.UPDATE_AWARENESS, onUpdateAwareness);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
+      socket.off(SOCKET_EVENTS.WELCOME, onWelcome);
       socket.off(SOCKET_EVENTS.PT_JOINED, onPtJoined);
       socket.off(SOCKET_EVENTS.PT_DISCONNECT, onPtDisconnect);
       socket.off(SOCKET_EVENTS.PT_LEFT, onPtLeft);
       socket.off(SOCKET_EVENTS.ROOM_PTS, onRoomPts);
       socket.off(SOCKET_EVENTS.ROOM_FILES, onRoomFiles);
       socket.off(SOCKET_EVENTS.ROOM_AWARENESSES, onRoomAwarenesses);
+      socket.off(SOCKET_EVENTS.UPDATE_PT, onUpdatePt);
       socket.off(SOCKET_EVENTS.UPDATE_FILE, onUpdateFile);
       socket.off(SOCKET_EVENTS.UPDATE_AWARENESS, onUpdateAwareness);
     };
