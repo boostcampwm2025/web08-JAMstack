@@ -3,11 +3,11 @@ services:
     build:
       context: .
       args:
-        - VITE_API_URL= # 빈 값으로 두면 브라우저의 현재 호스트를 자동으로 사용합니다.
+        - VITE_API_URL=
     container_name: codejam-service
-    ports:
-      - "80:80"
-      - "3000:3000"
+    # network_mode: host 를 추가합니다.
+    network_mode: host
+    # host 모드에서는 ports 설정이 필요 없거나 무시되지만 명시적으로 두어도 무방합니다.
     environment:
       - PORT=3000
       - REDIS_HOST=10.0.2.6
