@@ -24,9 +24,11 @@ WORKDIR /app
 COPY --from=builder /app/apps/client/dist /usr/share/nginx/html
 
 # 백엔드 실행에 필요한 파일들 복사
-COPY --from=builder /app/apps/server/dist ./dist
+# pnpm의 심볼릭 링크 구조를 유지하기 위해 필요한 모든 경로를 복사합니다.
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/server/node_modules ./node_modules
+COPY --from=builder /app/packages/common/dist ./packages/common/dist
+COPY --from=builder /app/apps/server/dist ./dist
+COPY --from=builder /app/apps/server/node_modules ./apps/server/node_modules
 COPY --from=builder /app/apps/server/package.json ./package.json
 
 # 설정 파일 복사
