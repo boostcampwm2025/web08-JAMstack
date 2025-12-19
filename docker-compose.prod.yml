@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        - VITE_API_URL=/
+    container_name: codejam-service
+    network_mode: host
+    # host 모드에서는 포트 포워딩이 필요 없으므로 주석 처리합니다.
+    # ports:
+    #   - "80:80"
+    #   - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_HOST=10.0.2.6
+      - REDIS_PORT=6379
+    restart: always
