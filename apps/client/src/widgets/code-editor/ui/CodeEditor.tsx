@@ -1,16 +1,18 @@
 import { useEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
+import { EditorState } from "@codemirror/state";
 import { javascript } from "@codemirror/lang-javascript";
 import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 import { githubLight } from "@fsegurai/codemirror-theme-github-light";
 import { useYDoc } from "@/shared/lib/hooks/useYDoc";
-import { yCollab } from 'y-codemirror.next';
+import { yCollab } from "y-codemirror.next";
 
 type Language = "javascript" | "html" | "css";
 
 interface CodeEditorProps {
   language?: Language;
+  readOnly?: boolean;
 }
 
 const getLanguageExtension = (language: Language) => {
@@ -28,10 +30,11 @@ const getLanguageExtension = (language: Language) => {
 
 export default function CodeEditor({
   language = "javascript",
+  readOnly = false,
 }: CodeEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const { yText, awareness } = useYDoc('prototype');
+  const { yText, awareness } = useYDoc("prototype");
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -39,14 +42,20 @@ export default function CodeEditor({
     const view = new EditorView({
       doc: yText.toString(),
       extensions: [
-        basicSetup, 
+        basicSetup,
         javascript(),
         yCollab(yText, awareness),
         getLanguageExtension(language),
         githubLight,
+        EditorState.readOnly.of(readOnly),
         EditorView.theme({
           "&": { height: "100%" },
           ".cm-scroller": { overflow: "auto" },
+          ...(readOnly && {
+            ".cm-cursor, .cm-dropCursor": { display: "none !important" },
+            // ".cm-selectionBackground": { display: "none !important" },
+            // ".cm-ySelectionCaret, .cm-ySelectionCaretDot": { display: "none !important" },
+          }),
         }),
       ],
       parent: editorRef.current,
@@ -57,7 +66,7 @@ export default function CodeEditor({
     return () => {
       view.destroy();
     };
-  }, [language, awareness, yText]);
+  }, [language, awareness, yText, readOnly]);
 
   return <div ref={editorRef} className="h-full" />;
 }

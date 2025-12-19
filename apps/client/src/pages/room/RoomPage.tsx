@@ -2,10 +2,16 @@
 import { CodeEditor } from "@/widgets/code-editor";
 import { Header } from "@/widgets/header";
 import { Participants } from "@/widgets/participants";
+import { useRoomStore } from "@/stores/room";
+import { usePt } from "@/stores/pts";
 
 function RoomPage() {
   // 프로토타입: roomId 고정
   // const { isConnected } = useSocket("prototype");
+
+  const myPtId = useRoomStore((state) => state.myPtId);
+  const myPt = usePt(myPtId || "");
+  const isViewer = myPt?.role === "viewer";
 
   // if (!isConnected) {
   //   return (
@@ -23,7 +29,7 @@ function RoomPage() {
           <Participants />
         </div>
         <div className="flex-1 h-full">
-          <CodeEditor language="javascript" />
+          <CodeEditor language="javascript" readOnly={isViewer} />
         </div>
       </main>
     </div>
