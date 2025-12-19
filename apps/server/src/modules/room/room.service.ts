@@ -84,7 +84,7 @@ export class RoomService {
 
     pt.presence = 'offline';
     const key = `room:${roomId}:pt:${ptId}`;
-    await this.redis.set(key, JSON.stringify(pt), 'EX', 60); // 60초 TTL
+    await this.redis.set(key, JSON.stringify(pt), 'EX', 10); // 10초 TTL
   }
 
   /**

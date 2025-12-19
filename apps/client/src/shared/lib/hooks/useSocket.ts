@@ -94,13 +94,10 @@ export const useSocket = (roomId: string, yDoc: Doc, awareness: Awareness) => {
 
     const onPtDisconnect = (data: PtDisconnectPayload) => {
       console.log(`👋 [PT_DISCONNECT] PtId: ${data.ptId}`);
-
       const pt = usePtsStore.getState().pts[data.ptId];
       if (!pt) return;
-
       const { setPt } = usePtsStore.getState();
-      pt.presence = "offline";
-      setPt(pt.ptId, pt);
+      setPt(pt.ptId, { ...pt, presence: "offline" });
     };
 
     const onPtLeft = (data: PtLeftPayload) => {
