@@ -47,10 +47,7 @@ export class AwarenessManager {
    * Apply awareness update from network
    */
   applyUpdate(message: Uint8Array, origin: unknown): void {
-    const update =
-      message instanceof Uint8Array ? message : new Uint8Array(message);
-
-    applyAwarenessUpdate(this.awareness, update, origin);
+    applyAwarenessUpdate(this.awareness, message, origin);
   }
 
   /**

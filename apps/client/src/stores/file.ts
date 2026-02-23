@@ -6,9 +6,9 @@ import { useSocketStore } from './socket';
 import { emitAwarenessUpdate, emitFileUpdate } from './socket-events';
 import {
   createCollaborationContext,
-  type YDocManager,
-  type AwarenessManager,
-  type FileManager,
+  YDocManager,
+  AwarenessManager,
+  FileManager,
   type FileMetadata,
   type DocMetadata,
 } from '@/shared/lib/collaboration';
@@ -82,6 +82,7 @@ interface FileState {
   setViewerFile: (fileId: string) => void;
   initializeDefaultFile: () => void;
   initializeActiveFile: () => void;
+  applyRemoteDocSnapshot: (snapshot: Uint8Array, updates: Uint8Array[]) => void;
   applyRemoteDocUpdate: (message: Uint8Array) => void;
   applyRemoteAwarenessUpdate: (message: Uint8Array) => void;
   measureCapacity: () => number;
@@ -227,6 +228,40 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   setViewerFile: (fileId: string | null) => {
     set({ viewerFileId: fileId });
+  },
+
+  applyRemoteDocSnapshot: (snapshot: Uint8Array, updates: Uint8Array[]) => {
+    const { yDocManager } = get();
+    if (!yDocManager) return;
+
+    // Construct a temporary Y.Doc from the server snapshot + updates to compute diff
+    // This doc is used to compute deltas and is destroyed afterwards
+    const remoteDoc = YDocManager.createDoc(snapshot, updates);
+    const clientDiff = yDocManager.encodeDiffAgainst(remoteDoc);
+    const serverDiff = yDocManager.encodeDiffFrom(remoteDoc);
+
+    // Update local state with server diff
+    if (serverDiff.byteLength > 0) {
+      const serverMessage = yDocManager.encodeSyncUpdate(serverDiff);
+      yDocManager.applyRemoteUpdate(serverMessage);
+    }
+
+    // Propagate local diff to server
+    if (clientDiff.byteLength > 0) {
+      const { roomCode, isConnected } = useSocketStore.getState();
+      if (roomCode && isConnected) {
+        const clientMessage = yDocManager.encodeSyncUpdate(clientDiff);
+        emitFileUpdate(roomCode, clientMessage);
+      }
+    }
+
+    // Destroy temporary Y.Doc used for diff computation
+    remoteDoc.destroy();
+
+    // Flag Y.Doc as initialized
+    if (!get().isInitialDocLoaded) {
+      set({ isInitialDocLoaded: true });
+    }
   },
 
   applyRemoteDocUpdate: (message: Uint8Array) => {
