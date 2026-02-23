@@ -120,6 +120,13 @@ export class AwarenessManager {
   }
 
   /**
+   * Encode local awareness update
+   */
+  encodeLocalUpdate(): Uint8Array {
+    return encodeAwarenessUpdate(this.awareness, [this.awareness.clientID]);
+  }
+
+  /**
    * Update current file in awareness
    */
   setCurrentFileId(fileId: string): void {

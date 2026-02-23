@@ -76,6 +76,7 @@ interface FileState {
 
   // Actions
   initialize: (roomCode: string) => number;
+  sync: (roomCode: string) => void;
   destroy: () => void;
   setActiveFile: (fileId: string | null) => void;
   setViewerFile: (fileId: string) => void;
@@ -197,15 +198,22 @@ export const useFileStore = create<FileState>((set, get) => ({
       isInitialized: true,
     });
 
-    // Request initial state from server
-    const { send, isConnected } = useSocketStore.getState();
-
-    if (isConnected) {
-      send(SOCKET_EVENTS.REQUEST_DOC);
-      send(SOCKET_EVENTS.REQUEST_AWARENESS);
-    }
-
     return yDoc.clientID;
+  },
+
+  sync: (roomCode: string) => {
+    const { awarenessManager, isInitialized } = get();
+    if (!isInitialized) return;
+
+    const { send, isConnected } = useSocketStore.getState();
+    if (!isConnected) return;
+
+    send(SOCKET_EVENTS.REQUEST_DOC);
+    send(SOCKET_EVENTS.REQUEST_AWARENESS);
+
+    if (!awarenessManager) return;
+    const message = awarenessManager.encodeLocalUpdate();
+    emitAwarenessUpdate(roomCode, message);
   },
 
   setActiveFile: (fileId: string | null) => {

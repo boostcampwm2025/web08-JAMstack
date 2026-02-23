@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { RoomCode } from '@codejam/common';
 import { socket } from '@/shared/api/socket';
 import { setupDomainEventHandlers } from './socket-events';
+import { useRoomStore } from './room';
 
 interface SocketState {
   socket: typeof socket;
@@ -28,6 +29,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     // Guard: Already connected to this room
     if (state.roomCode === roomCode && socket.connected) {
+      const { joinSocketRoom } = useRoomStore.getState();
+      void joinSocketRoom(roomCode);
       return;
     }
 
@@ -38,6 +41,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     const onConnect = () => {
       set({ isConnected: true });
+      if (!roomCode) return;
+
+      const { joinSocketRoom } = useRoomStore.getState();
+      void joinSocketRoom(roomCode);
     };
 
     const onDisconnect = () => {
