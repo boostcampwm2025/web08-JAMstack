@@ -4,6 +4,7 @@ import { ShareButton } from './components/ShareButton';
 import { DestroyRoomButton } from './components/DestroyRoomButton';
 import { ThemeToggleButton } from './components/ThemeToggleButton';
 import { RoleBadge } from './components/RoleBadge';
+import { OnlineStatusButton } from './components/OnlineStatusButton';
 import { usePermission } from '@/shared/lib/hooks/usePermission';
 // import { CodeExecutionButton } from './components/CodeExecutionButton';
 
@@ -23,7 +24,7 @@ export default function Header({ roomCode }: HeaderProps) {
         <div className="flex shrink-0 items-center gap-1">
           <RoleBadge role={role} />
           <RoomCode roomCode={roomCode} />
-          {/* <CodeExecutionButton /> */}
+          <OnlineStatusButton />
           <ShareButton roomCode={roomCode} />
           <DestroyRoomButton />
           <ThemeToggleButton />

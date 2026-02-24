@@ -5,6 +5,9 @@ import type {
   RoomCode,
   PtId,
 } from '@codejam/common';
+import { getAuthStatus } from '@/shared/api/room';
+import { emitJoinRoom } from '@/stores/socket-events';
+import { socket } from '@/shared/api/socket';
 
 interface RoomState {
   roomCode: RoomCode | null;
@@ -18,6 +21,7 @@ interface RoomState {
   setRoomType: (roomType: RoomType | null) => void;
   setWhoCanDestroyRoom: (whoCanDestroyRoom: WhoCanDestroyRoom | null) => void;
   setHasHostPassword: (hasHostPassword: boolean | null) => void;
+  joinSocketRoom: (roomCode: RoomCode, token?: string) => Promise<void>;
 }
 
 export const useRoomStore = create<RoomState>((set) => ({
@@ -32,4 +36,14 @@ export const useRoomStore = create<RoomState>((set) => ({
   setRoomType: (roomType) => set({ roomType }),
   setWhoCanDestroyRoom: (whoCanDestroyRoom) => set({ whoCanDestroyRoom }),
   setHasHostPassword: (hasHostPassword) => set({ hasHostPassword }),
+  joinSocketRoom: async (roomCode, token) => {
+    if (!socket.connected) return;
+
+    try {
+      const status = await getAuthStatus(roomCode);
+      emitJoinRoom(roomCode, token ?? status.token);
+    } catch {
+      return;
+    }
+  },
 }));

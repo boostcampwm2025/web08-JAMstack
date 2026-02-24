@@ -21,20 +21,17 @@ export interface FileMetadata {
 
 export class FileManager {
   private yDoc: YDoc;
-  private files!: YMap<YMap<unknown>>;
-  private names!: YMap<string>;
-  private meta!: YMap<unknown>;
+  private files: YMap<YMap<unknown>>;
+  private names: YMap<string>;
+  private meta: YMap<unknown>;
 
   constructor(yDoc: YDoc) {
     this.yDoc = yDoc;
 
     // Initialize Y.Doc structure
-
-    yDoc.transact(() => {
-      this.files = yDoc.getMap('files'); // Y.Map<fileId, Y.Map<name, Y.Text>>
-      this.names = yDoc.getMap('names'); // File name -> File Id tracking
-      this.meta = yDoc.getMap('meta'); // Y.Doc Metadata
-    });
+    this.files = yDoc.getMap('files'); // Y.Map<fileId, Y.Map<name, Y.Text>>
+    this.names = yDoc.getMap('names'); // File name -> File Id tracking
+    this.meta = yDoc.getMap('meta'); // Y.Doc Metadata
   }
 
   private generateId(): string {
@@ -123,18 +120,20 @@ export class FileManager {
    */
   initializeDefaultFile(): string | null {
     let fileId: string | null = null;
+
+    const language = DEFAULT_LANGUAGE;
+    const name = getDefaultFileName(language);
+    const template = getDefaultFileTemplate(language);
+
     this.yDoc.transact(() => {
-      const isInitialized = this.meta.get('initialized');
       // Create if empty and not previously initialized
+      const isInitialized = this.meta.get('initialized');
       if (this.files.size > 0 || isInitialized) return null;
 
       // Initialize Y.Doc metadata
       this.meta.set('title', DEFAULT_DOC_TITLE);
 
       // Create default file
-      const language = DEFAULT_LANGUAGE;
-      const name = getDefaultFileName(language);
-      const template = getDefaultFileTemplate(language);
       fileId = this.createFile(name, template);
 
       // Mark doc as initialized to prevent recreation after deletion

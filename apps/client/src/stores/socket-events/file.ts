@@ -7,22 +7,40 @@ import {
   type AwarenessUpdatePayload,
 } from '@codejam/common';
 import { useFileStore } from '../file';
+import { toUint8Array } from '@/shared/lib/collaboration/buffer';
 
 export const setupFileEventHandlers = () => {
   const onRoomDoc = (data: RoomDocPayload) => {
-    useFileStore.getState().applyRemoteDocUpdate(data.message);
+    const { snapshot: rawSnapshot, updates: rawUpdates } = data;
+    const snapshot = toUint8Array(rawSnapshot);
+    const updates = rawUpdates.map((rawUpdate) => toUint8Array(rawUpdate));
+
+    const { applyRemoteDocSnapshot } = useFileStore.getState();
+    applyRemoteDocSnapshot(snapshot, updates);
   };
 
   const onRoomAwareness = (data: RoomAwarenessPayload) => {
-    useFileStore.getState().applyRemoteAwarenessUpdate(data.message);
+    const { message: rawMessage } = data;
+    const message = toUint8Array(rawMessage);
+
+    const { applyRemoteAwarenessUpdate } = useFileStore.getState();
+    applyRemoteAwarenessUpdate(message);
   };
 
   const onUpdateFile = (data: FileUpdatePayload) => {
-    useFileStore.getState().applyRemoteDocUpdate(data.message);
+    const { message: rawMessage } = data;
+    const message = toUint8Array(rawMessage);
+
+    const { applyRemoteDocUpdate } = useFileStore.getState();
+    applyRemoteDocUpdate(message);
   };
 
   const onUpdateAwareness = (data: AwarenessUpdatePayload) => {
-    useFileStore.getState().applyRemoteAwarenessUpdate(data.message);
+    const { message: rawMessage } = data;
+    const message = toUint8Array(rawMessage);
+
+    const { applyRemoteAwarenessUpdate } = useFileStore.getState();
+    applyRemoteAwarenessUpdate(message);
   };
 
   socket.on(SOCKET_EVENTS.ROOM_DOC, onRoomDoc);

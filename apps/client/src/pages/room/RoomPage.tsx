@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react';
+import { useEffect, type DragEvent } from 'react';
 import { Header } from '@/widgets/header';
 import { useSocket } from '@/shared/lib/hooks/useSocket';
 import { useRoomJoin } from '@/shared/lib/hooks/useRoomJoin';
@@ -41,11 +41,17 @@ function RoomPage() {
   useAwarenessSync();
   useInitialFileSelection();
 
+  const initialize = useFileStore((state) => state.initialize);
   const setActiveFile = useFileStore((state) => state.setActiveFile);
   const activeFileId = useFileStore((state) => state.activeFileId);
   const getFileName = useFileStore((state) => state.getFileName);
 
   const loader = useLoaderData<RoomJoinStatus>();
+
+  useEffect(() => {
+    if (!paramCode) return;
+    initialize(paramCode);
+  }, [paramCode, initialize]);
 
   useSocket(paramCode!);
 
