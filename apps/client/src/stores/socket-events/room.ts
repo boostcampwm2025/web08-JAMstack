@@ -2,6 +2,7 @@ import { socket } from '@/shared/api/socket';
 import { SOCKET_EVENTS, type WelcomePayload } from '@codejam/common';
 import { useRoomStore } from '../room';
 import { useFileStore } from '../file';
+
 import { toast } from '@codejam/ui';
 
 const redirectToHome = () => {
@@ -25,9 +26,8 @@ export const setupRoomEventHandlers = () => {
     setWhoCanDestroyRoom(whoCanDestroyRoom);
     setHasHostPassword(hasHostPassword);
 
-    // Initialize filestore after joining room
-    const { initialize } = useFileStore.getState();
-    initialize(roomCode);
+    const { sync } = useFileStore.getState();
+    sync(roomCode);
   };
 
   const onGoodbye = () => {

@@ -29,7 +29,8 @@ export const roomPtsPayloadSchema = z.object({
 
 // Y.Doc 초기 상태 스키마 (S -> C)
 export const roomDocPayloadSchema = z.object({
-  message: z.instanceof(Uint8Array),
+  snapshot: z.instanceof(Uint8Array),
+  updates: z.array(z.instanceof(Uint8Array)),
 });
 
 // Awareness 초기 상태 스키마 (S -> C)

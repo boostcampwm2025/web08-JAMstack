@@ -91,7 +91,7 @@ export const createCustomRoom = async (
   }
 };
 
-export const joinRoom = async (
+export const registerRoomParticipant = async (
   roomCode: string,
   nickname: string,
   password: string | null,

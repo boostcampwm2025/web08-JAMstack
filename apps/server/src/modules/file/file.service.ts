@@ -246,12 +246,10 @@ export class FileService {
     const { doc } = roomDoc;
 
     // Encode and send entire Y.Doc state
-    const update = encodeStateAsUpdate(doc);
-    const encoder = createEncoder();
-    writeUpdate(encoder, update);
-    const message = toUint8Array(encoder);
+    const snapshot = encodeStateAsUpdate(doc);
 
-    client.emit(SOCKET_EVENTS.ROOM_DOC, { docId, message });
+    const payload = { snapshot, updates: [] };
+    client.emit(SOCKET_EVENTS.ROOM_DOC, payload);
   }
 
   /**
