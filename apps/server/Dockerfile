@@ -1,4 +1,8 @@
-# GitHub Actions에서 빌드된 결과물을 사용하는 경량 이미지
+# Oracle VM 수동 배포 전용:
+# - VM 호스트에서 pnpm install / pnpm build 후, docker build 컨텍스트에 node_modules·dist가 들어가야 함
+#   (보통 .dockerignore에서 해당 항목을 잠시 완화 — 레포 기본값은 그대로 두고 VM에서만 조정하는 편이 안전)
+# - GitHub Actions의 서버 이미지 빌드(cd-prod 등)는 이 Dockerfile과 전제가 다르므로, CI 정리는 Vercel·수동 배포 확인 후 별도로 맞추면 됨
+
 FROM node:22-slim
 
 # 보안: non-root 유저 생성
@@ -6,19 +10,14 @@ RUN useradd -m -u 1001 appuser
 
 WORKDIR /app
 
-# production 의존성 파일만 복사
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY packages/common/package.json ./packages/common/
-COPY apps/server/package.json ./apps/server/
-
-# production 의존성만 설치
-RUN corepack enable && corepack prepare pnpm@10.26.0 --activate \
-    && pnpm install --frozen-lockfile --prod \
-    && corepack disable
-
-# 빌드된 결과물 복사 (GitHub Actions에서 빌드됨)
+# 호스트(VM)에서 이미 준비된 의존성과 빌드 산출물을 복사만 함
+COPY node_modules ./node_modules
+COPY apps/server/node_modules ./apps/server/node_modules
+COPY packages/common/node_modules ./packages/common/node_modules
+COPY packages/common/package.json ./packages/common/package.json
 COPY packages/common/dist ./packages/common/dist
 COPY apps/server/dist ./apps/server/dist
+COPY apps/server/package.json ./apps/server/package.json
 
 # 소유권 변경
 RUN chown -R appuser:appuser /app

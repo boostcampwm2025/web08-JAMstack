@@ -9,13 +9,13 @@ export const environments: Record<string, EnvironmentConfig> = {
     clientUrl: 'http://localhost:5173',
   },
   staging: {
-    serverUrl: 'https://staging.codejam.kro.kr',
+    serverUrl: 'https://staging-api.codejam.app',
     clientUrl:
       'https://codejam-web08jamstack-6306-jamstacks-projects.vercel.app',
   },
   production: {
-    serverUrl: 'https://production.codejam.kro.kr',
-    clientUrl: 'https://lets-codejam.vercel.app',
+    serverUrl: 'https://api.codejam.app',
+    clientUrl: 'https://www.codejam.app',
   },
 };
 

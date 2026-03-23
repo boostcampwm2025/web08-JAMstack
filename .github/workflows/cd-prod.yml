@@ -46,7 +46,7 @@ jobs:
             "rewrites": [
               {
                 "source": "/api/(.*)",
-                "destination": "https://production.codejam.kro.kr/api/$1"
+                "destination": "https://api.codejam.app/api/$1"
               },
               {
                 "source": "/(.*)",

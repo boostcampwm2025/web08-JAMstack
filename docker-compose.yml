@@ -1,0 +1,157 @@
+# Oracle VM 수동 배포용 통합 compose (프로덕션/스테이징·DB·Redis·Piston·Caddy 등).
+# 이미지는 호스트 빌드 산출물을 COPY하는 apps/server/Dockerfile 기준 — CI 레지스트리 빌드와는 별 트랙으로 두었음.
+
+services:
+  server-prod:
+    image: codejam-server:production
+    build:
+      context: .
+      dockerfile: ./apps/server/Dockerfile
+    container_name: server-prod
+    restart: unless-stopped
+    env_file:
+      - /root/.env.prod
+    environment:
+      # 컨테이너 네트워크 기준으로 Redis/DB/Piston에 접속
+      REDIS_HOST: redis
+      DB_HOST: db
+      PISTON_API_URL: http://piston:2000/api/v2
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+  server-staging:
+    image: codejam-server:staging
+    build:
+      context: .
+      dockerfile: ./apps/server/Dockerfile
+    container_name: server-staging
+    restart: unless-stopped
+    env_file:
+      - /root/.env.staging
+    environment:
+      # 컨테이너 네트워크 기준으로 Redis/DB/Piston에 접속
+      REDIS_HOST: redis
+      DB_HOST: db
+      PISTON_API_URL: http://piston:2000/api/v2
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: codejam-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+  db:
+    image: postgres:18
+    container_name: codejam-db
+    restart: always
+    environment:
+      # Postgres는 첫 초기화 시 POSTGRES_DB 하나만 자동 생성
+      POSTGRES_DB: codejam_prod
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    shm_size: 128mb
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    platform: linux/amd64
+    container_name: codejam-piston
+    privileged: true
+    restart: unless-stopped
+    volumes:
+      - piston_data:/piston
+    env_file:
+      - ./apps/piston/.env
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: codejam-caddy
+    restart: unless-stopped
+    env_file:
+      - /root/.env.caddy
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/root/.local/share/caddy
+    command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile']
+    depends_on:
+      - server-prod
+      - server-staging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - codejam-net
+
+volumes:
+  caddy_data:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  piston_data:
+    driver: local
+
+networks:
+  codejam-net:
+    driver: bridge
