@@ -1,5 +1,5 @@
 # Client
-
+<!-- chore: trigger staging client deployment -->
 CodeJam 프론트엔드 애플리케이션입니다.
 
 ## 기술 스택
