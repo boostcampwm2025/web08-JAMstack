@@ -70,7 +70,7 @@ jobs:
             "rewrites": [
               {
                 "source": "/api/(.*)",
-                "destination": "https://staging.codejam.kro.kr/api/$1"
+                "destination": "https://staging-api.codejam.app/api/$1"
               },
               {
                 "source": "/(.*)",

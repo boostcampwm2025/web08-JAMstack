@@ -1,18 +1,15 @@
 {
-    email ${{ secrets.ZEROSSL_EMAIL }}
-
-    acme_ca https://acme.zerossl.com/v2/DV90
-
-    acme_eab {
-        key_id  ${{ secrets.ACME_KEY_ID }}
-        mac_key ${{ secrets.ACME_MAC_KEY }}
-    }
+    # Let's Encrypt (프론트는 Vercel www.codejam.app, API만 이 서버에서 처리)
+    email {env.ACME_EMAIL}
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
 }
 
-production.codejam.kro.kr {
-	reverse_proxy localhost:3000
+# 프로덕션 API → server-prod (DNS: api.codejam.app A → Oracle VM)
+api.codejam.app {
+	reverse_proxy server-prod:3000
 }
 
-staging.codejam.kro.kr {
-	reverse_proxy localhost:3001
+# 스테이징 API → server-staging (DNS: staging-api.codejam.app A → Oracle VM)
+staging-api.codejam.app {
+	reverse_proxy server-staging:3000
 }
