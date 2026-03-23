@@ -1,6 +1,7 @@
 # Client
 
 CodeJam 프론트엔드 애플리케이션입니다.
+<!-- chore: trigger staging client deployment -->
 
 ## 기술 스택
 
