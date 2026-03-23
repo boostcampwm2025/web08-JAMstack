@@ -15,6 +15,7 @@ jobs:
         id: changes
         uses: dorny/paths-filter@v3
         with:
+          base: ${{ github.event.before }}
           filters: |
             client:
               - 'apps/client/**'

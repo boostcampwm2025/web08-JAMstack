@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import Avvvatars from './avvvatars/avvvatars.js';
 import { getAvatarColors } from '@codejam/common/avvvatars';
+import { SHAPE_PATHS } from './avvvatars/shape-paths.js';
 import { type AvatarProvider } from './avatar-generator.js';
 
 export type AvvvatarsVariant = 'shape' | 'character';
@@ -28,51 +28,39 @@ export class AvvvatarsProvider implements AvatarProvider {
   }
 
   toSvgString(id: string, size: number): string {
-    const html = renderToStaticMarkup(
-      createElement(Avvvatars, {
-        value: id,
-        size,
-        variant: this.variant,
-      }),
-    );
-
-    // 색상 정보 가져오기
     const colors = getAvatarColors(id);
     const bgColor = colors.background;
-    const fgColor = this.variant === 'character' ? colors.text : colors.shape;
 
     if (this.variant === 'character') {
-      // Character 모드: 배경 원 + 텍스트
       const name = String(id).substring(0, 2).toUpperCase();
+      const fgColor = colors.text;
       const fontSize = Math.round((size / 100) * 37);
 
-      const svg = `<svg viewBox="0 0 32 32" fill="none" width="${size}" height="${size}">
+      return `<svg viewBox="0 0 32 32" fill="none" width="${size}" height="${size}">
         <circle cx="16" cy="16" r="16" fill="${bgColor}"/>
         <text x="16" y="16" text-anchor="middle" dominant-baseline="central" fill="${fgColor}" font-family="-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, sans-serif" font-size="${fontSize}" font-weight="500" style="text-transform: uppercase;">${name}</text>
       </svg>`;
-
-      return svg;
     } else {
-      // Shape 모드: 배경 원 + 아이콘
-      // 아이콘 path 추출 (원본 viewBox는 항상 32x32)
-      const pathMatch = html.match(/<path[^>]*d="([^"]+)"[^>]*>/);
-      const pathD = pathMatch ? pathMatch[1] : '';
+      const pathData = SHAPE_PATHS[colors.shapeIndex];
+      const fgColor = colors.shape;
 
-      // clipPath 추출 (일부 shape에서 사용)
-      const clipPathMatch = html.match(/<clipPath[^>]*>([\s\S]*?)<\/clipPath>/);
-      const hasClipPath = !!clipPathMatch;
+      const clipDefs = pathData.clipPathId
+        ? `<defs><clipPath id="${pathData.clipPathId}"><rect width="32" height="32" fill="white"/></clipPath></defs>`
+        : '';
+      const clipOpen = pathData.clipPathId
+        ? `<g clip-path="url(#${pathData.clipPathId})">`
+        : '';
+      const clipClose = pathData.clipPathId ? '</g>' : '';
 
-      const svg = `<svg viewBox="0 0 32 32" fill="none" width="${size}" height="${size}">
+      return `<svg viewBox="0 0 32 32" fill="none" width="${size}" height="${size}">
         <circle cx="16" cy="16" r="16" fill="${bgColor}"/>
         <g transform="translate(6.4, 6.4) scale(0.6)">
-          ${hasClipPath ? `<defs>${clipPathMatch[0]}</defs>` : ''}
-          ${hasClipPath ? `<g clip-path="url(#clip0_1_4196)">` : ''}
-          <path d="${pathD}" fill="${fgColor}"/>
-          ${hasClipPath ? '</g>' : ''}
+          ${clipDefs}
+          ${clipOpen}
+          <path d="${pathData.d}" fill="${fgColor}"/>
+          ${clipClose}
         </g>
       </svg>`;
-
-      return svg;
     }
   }
 }

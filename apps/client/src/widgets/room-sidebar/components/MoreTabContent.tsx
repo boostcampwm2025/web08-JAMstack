@@ -3,6 +3,7 @@ import { cn, SidebarHeader } from '@codejam/ui';
 import { MORE_MENU_ITEMS } from '../lib/sidebar-data';
 import { ExternalLink } from 'lucide-react';
 import { ShortcutList } from './ShortcutList';
+import { PinButton } from './PinButton';
 
 export function MoreTabContent() {
   const [activeAction, setActiveAction] = useState<string | null>(null);
@@ -13,7 +14,7 @@ export function MoreTabContent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <SidebarHeader title="더보기" />
+      <SidebarHeader title="더보기" action={<PinButton />} />
 
       <div className="flex flex-col gap-1">
         {MORE_MENU_ITEMS.map((item) => {

@@ -6,7 +6,8 @@ import {
   type ChangeEvent,
 } from 'react';
 import { Button, Textarea } from '@codejam/ui';
-import { Send, FileText } from 'lucide-react';
+import { Send } from 'lucide-react';
+import { ChatMentionPopover } from './ChatMentionPopover';
 import { LIMITS } from '@codejam/common';
 import { emitChatMessage } from '@/stores/socket-events/chat';
 import { useFileStore } from '@/stores/file';
@@ -43,8 +44,10 @@ export function ChatInput() {
 
   // 선택 인덱스 리셋 (setState는 다음 틱으로 지연해 cascading render 방지)
   useEffect(() => {
-    queueMicrotask(() => setSelectedIndex(0));
-  }, [mentionState.query]);
+    if (mentionState.isOpen) {
+      queueMicrotask(() => setSelectedIndex(0));
+    }
+  }, [mentionState.isOpen, mentionState.query]);
 
   const trimmedContent = content.trim();
   const isValid =
@@ -134,67 +137,33 @@ export function ChatInput() {
 
   return (
     <div className="border-border relative flex items-end gap-2 border-t px-3 py-2 select-none">
-      {/* 파일 선택 Popover */}
-      {mentionState.isOpen && filteredFiles.length > 0 && (
-        <div className="border-border bg-popover/95 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2 absolute bottom-full left-3 mb-2 w-72 origin-bottom rounded-xl border p-1.5 shadow-xl backdrop-blur-sm duration-150">
-          {/* 헤더 */}
-          <div className="text-muted-foreground mb-1 px-2 py-1 text-[10px] font-medium tracking-wider uppercase">
-            파일 선택
-          </div>
-
-          {/* 파일 목록 */}
-          <div className="max-h-48 overflow-y-auto">
-            {filteredFiles.slice(0, 8).map(({ name: fileName }, index) => (
-              <button
-                key={fileName}
-                onClick={() => handleSelectFile(fileName)}
-                className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-all duration-150 ${
-                  index === selectedIndex
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-foreground hover:bg-accent/60'
-                }`}
-              >
-                <div
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
-                    index === selectedIndex
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground group-hover:bg-accent'
-                  }`}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                </div>
-                <span className="truncate font-medium">{fileName}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* 힌트 */}
-          <div className="text-muted-foreground/70 border-border/50 mt-1 border-t px-2 pt-1.5 text-[10px]">
-            ↑↓ 이동 · Enter 선택 · Esc 닫기
-          </div>
-        </div>
-      )}
-
-      <Textarea
-        ref={textareaRef}
-        value={content}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        placeholder="메시지를 입력하세요... (@로 파일 언급)"
-        maxLength={LIMITS.CHAT_MESSAGE_MAX}
-        rows={1}
-        className="max-h-[100px] min-h-[36px] flex-1 resize-none"
-      />
+      <div className="relative flex-1">
+        <ChatMentionPopover
+          isOpen={mentionState.isOpen}
+          files={filteredFiles}
+          selectedIndex={selectedIndex}
+          onSelectFile={handleSelectFile}
+        />
+        <Textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder="메시지를 입력하세요... (@로 파일 언급)"
+          maxLength={LIMITS.CHAT_MESSAGE_MAX}
+          rows={1}
+          className="max-h-25 min-h-9 w-full resize-none"
+        />
+      </div>
 
       <Button
         variant="ghost"
-        size="icon"
+        size="icon-lg"
         onClick={handleSend}
         disabled={!isValid}
-        className="h-9 w-9 shrink-0"
         title="전송 (Enter)"
       >
-        <Send className="h-4 w-4" />
+        <Send />
       </Button>
     </div>
   );

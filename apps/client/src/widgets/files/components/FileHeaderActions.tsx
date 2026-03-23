@@ -1,11 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { Plus, Upload, Image } from 'lucide-react';
 import { Button } from '@codejam/ui';
-import { NewFileDialog } from '@/widgets/dialog/NewFileDialog';
-import { DuplicateDialog } from '@/widgets/dialog/DuplicateDialog_new';
+import { DuplicateDialog } from '@/widgets/dialog/DuplicateDialog';
 import { ImageUploadDialog } from '@/widgets/dialog/ImageUploadDialog';
 import { useFileStore } from '@/stores/file';
-import { useFileRename } from '@/shared/lib/hooks/useFileRename';
 import { uploadFile } from '@/shared/lib/file';
 import { EXT_TYPES } from '@codejam/common';
 
@@ -15,15 +13,12 @@ const getAcceptedExtensions = () => {
 };
 
 export function FileHeaderActions({
-  roomCode,
   onCreateClick,
 }: {
-  roomCode: string;
   onCreateClick?: () => void;
 }) {
   const uploadRef = useRef<HTMLInputElement>(null);
-  const { getFileId, createFile, setActiveFile } = useFileStore();
-  const { handleCheckRename } = useFileRename(roomCode);
+  const { getFileId, createFile } = useFileStore();
 
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -65,21 +60,6 @@ export function FileHeaderActions({
     [createFile, getFileId],
   );
 
-  // 새 파일 생성
-  const handleNewFile = async (name: string) => {
-    const fullNames = name;
-    if (getFileId(fullNames)) {
-      setCurrentDuplicate({ name: fullNames });
-      setIsDialogOpen(true);
-    } else {
-      const result = await handleCheckRename(fullNames);
-      if (result) {
-        const fileId = createFile(fullNames, '');
-        setActiveFile(fileId);
-      }
-    }
-  };
-
   // 업로드
   const handleUploadFile = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const files = ev.target.files;
@@ -102,22 +82,14 @@ export function FileHeaderActions({
 
   return (
     <div className="flex items-center">
-      {onCreateClick ? (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title="새 파일"
-          onClick={onCreateClick}
-        >
-          <Plus />
-        </Button>
-      ) : (
-        <NewFileDialog onSubmit={handleNewFile}>
-          <Button variant="ghost" size="icon-sm" title="새 파일">
-            <Plus />
-          </Button>
-        </NewFileDialog>
-      )}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title="새 파일"
+        onClick={onCreateClick}
+      >
+        <Plus />
+      </Button>
 
       <Button
         variant="ghost"

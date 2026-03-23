@@ -24,7 +24,7 @@ export function ShareDialog({ children, roomCode }: ShareDialogProps) {
 
   return (
     <Dialog>
-      <DialogTrigger>{children}</DialogTrigger>
+      <DialogTrigger render={children as React.ReactElement} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>참여자 초대하기</DialogTitle>

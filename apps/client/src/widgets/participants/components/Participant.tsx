@@ -98,9 +98,9 @@ export const Participant = memo(({ ptId }: ParticipantProps) => {
                 )}
 
                 {isMe && (
-                  <div className="dark:text-indigo-300s relative flex items-center rounded-full bg-indigo-100 p-0.5 px-2 text-indigo-600 dark:bg-indigo-900/50">
+                  <div className="dark:text-indigo-300s relative flex items-center rounded-full bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/50">
                     <div className="flex w-full justify-center">
-                      <span className="z-10 text-[10px] font-bold uppercase select-none">
+                      <span className="z-10 text-[10px] leading-0 font-bold uppercase select-none">
                         YOU
                       </span>
                     </div>

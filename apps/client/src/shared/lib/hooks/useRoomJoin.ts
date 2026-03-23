@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { ERROR_CODE } from '@codejam/common';
-import { getAuthStatus, joinRoom, verifyPassword } from '@/shared/api/room';
-import { emitJoinRoom } from '@/stores/socket-events';
-import { socket } from '@/shared/api/socket';
+import {
+  getAuthStatus,
+  registerRoomParticipant,
+  verifyPassword,
+} from '@/shared/api/room';
 import { useRoomStore } from '@/stores/room';
 
 export function useRoomJoin() {
@@ -26,24 +28,16 @@ export function useRoomJoin() {
   const passwordRef = useRef('');
 
   const setRoomCode = useRoomStore((state) => state.setRoomCode);
+  const joinSocketRoom = useRoomStore((state) => state.joinSocketRoom);
 
   useEffect(() => {
     if (paramCode) setRoomCode(paramCode);
   }, [paramCode, setRoomCode]);
 
-  const handleJoinWithToken = useCallback((roomCode: string, token: string) => {
-    const sendJoinEvent = () => {
-      emitJoinRoom(roomCode, token);
-    };
-
-    if (socket.connected) {
-      // 1. 이미 소켓이 연결되어 있다면 즉시 입장
-      sendJoinEvent();
-    } else {
-      // 2. 아직 연결 중이라면 연결되는 순간 딱 한 번 실행되도록 예약
-      socket.once('connect', sendJoinEvent);
-    }
-  }, []);
+  const handleJoin = useCallback(
+    (roomCode: string, token: string) => joinSocketRoom(roomCode, token),
+    [joinSocketRoom],
+  );
 
   /**
    * [Step 1] 초기 로드 시 인증 상태 확인
@@ -53,7 +47,7 @@ export function useRoomJoin() {
       if (!paramCode) return;
       try {
         const { token } = await getAuthStatus(paramCode);
-        handleJoinWithToken(paramCode, token);
+        handleJoin(paramCode, token);
       } catch (e: unknown) {
         // 인증 실패: 에러 코드에 따라 모달 오픈
         const code = (e as { code?: string }).code;
@@ -68,7 +62,7 @@ export function useRoomJoin() {
       }
     };
     initAuth();
-  }, [paramCode, handleJoinWithToken]);
+  }, [paramCode, handleJoin]);
 
   /**
    * [Step 2] 비밀번호 확인 후 닉네임 모달로 전환
@@ -96,13 +90,13 @@ export function useRoomJoin() {
     async (nickname: string) => {
       if (!paramCode) return;
       try {
-        const { token } = await joinRoom(
+        const { token } = await registerRoomParticipant(
           paramCode,
           nickname,
           passwordRef.current,
         );
 
-        handleJoinWithToken(paramCode, token);
+        handleJoin(paramCode, token);
 
         setIsNicknameDialogOpen(false);
         passwordRef.current = '';
@@ -111,7 +105,7 @@ export function useRoomJoin() {
         setRoomError(message || '입장 중 오류가 발생했습니다.');
       }
     },
-    [paramCode, handleJoinWithToken],
+    [paramCode, handleJoin],
   );
 
   return {

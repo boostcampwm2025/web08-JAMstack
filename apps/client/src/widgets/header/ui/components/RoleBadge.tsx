@@ -12,7 +12,7 @@ export function RoleBadge({ role }: RoleBadgeProps) {
   return (
     <div
       className={cn(
-        'relative flex h-6 w-auto items-center justify-center gap-2 rounded-full p-0.5 px-3',
+        'relative flex items-center justify-center gap-2 rounded-full px-2.5 py-2',
         ROLE_BADGE_STYLES[role],
       )}
     >
@@ -20,11 +20,9 @@ export function RoleBadge({ role }: RoleBadgeProps) {
         <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current leading-0" />
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current leading-0 opacity-75" />
       </span>
-      <div className="flex w-full justify-center">
-        <span className="z-10 text-[10px] leading-0 font-bold uppercase select-none">
-          {role.toUpperCase()}
-        </span>
-      </div>
+      <span className="z-10 text-[10px] leading-0 font-bold uppercase select-none">
+        {role.toUpperCase()}
+      </span>
     </div>
   );
 }

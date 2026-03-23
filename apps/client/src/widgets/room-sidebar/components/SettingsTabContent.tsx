@@ -14,6 +14,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useSettings } from '@/shared/lib/hooks/useSettings';
+import { PinButton } from './PinButton';
 
 export function SettingsTabContent() {
   const {
@@ -37,7 +38,7 @@ export function SettingsTabContent() {
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-x-hidden overflow-y-hidden">
-      <SidebarHeader title="에디터 설정" />
+      <SidebarHeader title="에디터 설정" action={<PinButton />} />
       <div className="flex h-full w-full flex-col justify-between">
         <div className="grid gap-6">
           <section>

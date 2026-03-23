@@ -22,7 +22,7 @@ export async function checkRoomJoinable(
     case ROOM_JOIN_STATUS.NOT_FOUND:
       throw new Error(MESSAGE.ERROR.ROOM_NOT_FOUND);
     case ROOM_JOIN_STATUS.FULL:
-      throw new Error(MESSAGE.ERROR.ROOM_FULL);
+      return status;
     case ROOM_JOIN_STATUS.JOINABLE:
       return status;
     default:
@@ -91,7 +91,7 @@ export const createCustomRoom = async (
   }
 };
 
-export const joinRoom = async (
+export const registerRoomParticipant = async (
   roomCode: string,
   nickname: string,
   password: string | null,

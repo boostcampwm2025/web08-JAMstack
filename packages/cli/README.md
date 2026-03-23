@@ -1,11 +1,11 @@
-# @codejam/cli
+# codejam-cli
 
 터미널에서 CodeJam 협업 코딩 룸을 빠르게 생성하고 관리하는 CLI 도구입니다.
 
 ## 설치
 
 ```bash
-npm install -g @codejam/cli
+npm install -g codejam-cli
 ```
 
 ## 명령어
@@ -182,7 +182,7 @@ echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.zshrc
 source ~/.zshrc
 
 # 다시 설치
-npm install -g @codejam/cli
+npm install -g codejam-cli
 ```
 
 ---

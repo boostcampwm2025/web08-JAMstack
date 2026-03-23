@@ -26,13 +26,15 @@ function NotFoundPage() {
   }
 
   return (
-    <main className="flex h-screen flex-col items-center justify-center bg-gray-100">
+    <main className="flex h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
       <section className="flex flex-col items-center text-center">
         <span className="mb-4 text-6xl" role="img" aria-label="에러 아이콘">
           {icon}
         </span>
-        <h1 className="mb-4 text-2xl font-semibold text-gray-800">{title}</h1>
-        <p className="mb-8 text-gray-500">{message}</p>
+        <h1 className="mb-4 text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          {title}
+        </h1>
+        <p className="mb-8 text-gray-500 dark:text-gray-400">{message}</p>
         <nav>
           <Button size="lg" render={<Link to="/" />}>
             메인 페이지로 이동

@@ -1,6 +1,6 @@
 {
   "name": "codejam-cli",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "CodeJam CLI for creating and managing collaborative coding rooms",
   "type": "module",
   "bin": {
@@ -23,7 +23,6 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.0",
   "dependencies": {
-    "@codejam/common": "workspace:*",
     "chalk": "^5.4.1",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
@@ -31,6 +30,7 @@
     "ora": "^8.1.1"
   },
   "devDependencies": {
+    "@codejam/common": "workspace:*",
     "@types/node": "^22.10.5",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3"

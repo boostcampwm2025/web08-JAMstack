@@ -3,26 +3,14 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import { CLI_PACKAGE_NAME, PROJECT_NAME } from '@codejam/common';
 import { handleError } from '../utils/index.js';
+import packageJson from '../../package.json' with { type: 'json' };
 
 const execAsync = promisify(exec);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 function getCurrentVersion(): string {
-  try {
-    const packageJson = JSON.parse(
-      readFileSync(join(__dirname, '../../package.json'), 'utf-8'),
-    );
-    return packageJson.version;
-  } catch {
-    return '1.0.0';
-  }
+  return packageJson.version;
 }
 
 async function getLatestVersion(): Promise<string> {

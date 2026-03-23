@@ -4,6 +4,7 @@ import { filenameSchema } from '@codejam/common';
 import { toast } from '@codejam/ui';
 
 interface InlineFileInputProps {
+  initialValue?: string;
   onSubmit: (filename: string) => void;
   onCancel: () => void;
 }
@@ -22,10 +23,11 @@ const validateFilename = (value: string) => {
 };
 
 export const InlineFileInput = ({
+  initialValue = '',
   onSubmit,
   onCancel,
 }: InlineFileInputProps) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -87,12 +89,12 @@ export const InlineFileInput = ({
   };
 
   return (
-    <div className="relative w-full">
+    <div className={cn('relative mt-1 w-full', error && 'mb-5')}>
       <div
         className={cn(
-          'group relative my-0.5 flex h-10 items-center justify-between px-2 transition-all duration-200 select-none',
+          'group relative flex h-10 items-center justify-between px-2 transition-all duration-200 select-none',
           ACTIVE_FILE_BG,
-          error && 'border-destructive/50 mb-5 border',
+          error && 'border-destructive/50 border',
         )}
       >
         <div className="flex w-full items-center space-x-3 overflow-hidden">

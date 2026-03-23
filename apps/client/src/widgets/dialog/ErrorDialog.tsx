@@ -1,12 +1,12 @@
 import {
-  RadixDialog as Dialog,
-  RadixDialogContent as DialogContent,
-  RadixDialogDescription as DialogDescription,
-  RadixDialogFooter as DialogFooter,
-  RadixDialogHeader as DialogHeader,
-  RadixDialogTitle as DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Button,
 } from '@codejam/ui';
-import { Button } from '@codejam/ui';
 import type { FormEvent } from 'react';
 
 interface ErrorDialogProps {
@@ -32,11 +32,11 @@ export function ErrorDialog({
   return (
     <Dialog open={open}>
       <DialogContent showCloseButton={false}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="contents">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
+          <DialogDescription>{description}</DialogDescription>
           <DialogFooter>
             <Button type="submit">{buttonLabel}</Button>
           </DialogFooter>

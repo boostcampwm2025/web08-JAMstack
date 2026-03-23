@@ -100,7 +100,7 @@ const ChatMessages = memo(function ChatMessages() {
   const messages = useChatStore((state) => state.messages);
 
   return (
-    <div className="min-h-0 flex-1 select-none">
+    <div className="min-h-0 flex-1">
       <ChatWindow messages={messages} />
     </div>
   );

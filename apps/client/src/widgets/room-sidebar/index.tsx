@@ -15,10 +15,11 @@ import { Logo } from './components/Logo';
 import { useSidebarStore } from '@/stores/sidebar';
 
 export function RoomSidebar({ className }: { className?: string }) {
-  const { activeSidebarTab, toggleSidebarTab } = useSidebarStore();
+  const { activeSidebarTab, isPinned, toggleSidebarTab } = useSidebarStore();
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
 
-  const isOpen = activeSidebarTab !== null;
+  const isOpen = activeSidebarTab !== null || isPinned;
+  const visibleTab = activeSidebarTab ?? (isPinned ? 'FILES' : null);
 
   return (
     <div className={cn('flex', className)}>
@@ -28,7 +29,7 @@ export function RoomSidebar({ className }: { className?: string }) {
         {SIDEBAR_TABS.map((tab) => (
           <SidebarButton
             key={tab.id}
-            isActive={activeSidebarTab === tab.id}
+            isActive={visibleTab === tab.id}
             onClick={() => toggleSidebarTab(tab.id)}
             icon={tab.icon}
             label={tab.label}
@@ -38,7 +39,7 @@ export function RoomSidebar({ className }: { className?: string }) {
         <div className="mt-auto flex w-full flex-col items-center gap-2">
           <SidebarButton
             key={SETTINGS_TAB.id}
-            isActive={activeSidebarTab === SETTINGS_TAB.id}
+            isActive={visibleTab === SETTINGS_TAB.id}
             onClick={() => toggleSidebarTab(SETTINGS_TAB.id)}
             icon={SETTINGS_TAB.icon}
             label={SETTINGS_TAB.label}
@@ -55,10 +56,10 @@ export function RoomSidebar({ className }: { className?: string }) {
         </div>
       </nav>
       <SidebarPanel isOpen={isOpen}>
-        {activeSidebarTab === 'PARTICIPANTS' && <Participants />}
-        {activeSidebarTab === 'FILES' && <FileList />}
-        {activeSidebarTab === 'MORE' && <MoreTabContent />}
-        {activeSidebarTab === 'SETTINGS' && <SettingsTabContent />}
+        {visibleTab === 'PARTICIPANTS' && <Participants />}
+        {visibleTab === 'FILES' && <FileList />}
+        {visibleTab === 'MORE' && <MoreTabContent />}
+        {visibleTab === 'SETTINGS' && <SettingsTabContent />}
       </SidebarPanel>
 
       <LeaveRoomDialog

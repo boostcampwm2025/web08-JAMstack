@@ -43,6 +43,8 @@ function DialogContent({
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
+  onInteractOutside?: (event: Event) => void;
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
 }) {
   return (
     <DialogPortal>

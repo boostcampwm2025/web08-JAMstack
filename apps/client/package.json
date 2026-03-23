@@ -31,6 +31,7 @@
     "@vercel/speed-insights": "^1.3.1",
     "codemirror": "^6.0.2",
     "highlight.js": "^11.11.1",
+    "js-cookie": "^3.0.5",
     "lib0": "^0.2.115",
     "lucide-react": "^0.561.0",
     "qrcode.react": "^4.2.0",
@@ -56,6 +57,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@testing-library/react": "^16.3.1",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

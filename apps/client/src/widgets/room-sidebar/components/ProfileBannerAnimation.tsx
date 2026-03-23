@@ -88,7 +88,7 @@ const VARIANTS = [
     animationCss: ANIMATIONS.swim,
     animationName: 'move-swim',
     duration: '8s',
-    yOffset: '-12px',
+    yOffset: '0px',
   },
   {
     id: 'rabbit',
@@ -96,7 +96,7 @@ const VARIANTS = [
     animationCss: ANIMATIONS.hop,
     animationName: 'move-hop',
     duration: '7s',
-    yOffset: '-8px',
+    yOffset: '2px',
   },
   {
     id: 'penguin',
@@ -104,7 +104,7 @@ const VARIANTS = [
     animationCss: ANIMATIONS.slide,
     animationName: 'move-slide',
     duration: '7s',
-    yOffset: '-6px',
+    yOffset: '4px',
   },
 ];
 
@@ -122,14 +122,14 @@ export function ProfileBannerAnimation() {
     <>
       <style>{variant.animationCss}</style>
       <div
-        className="pointer-events-none absolute top-1/2 left-0 text-white/20 select-none"
+        className="pointer-events-none absolute top-1/2 left-0 text-white/50 select-none"
         style={{
           marginTop: variant.yOffset,
           animation: `${variant.animationName} ${variant.duration} linear infinite`,
         }}
         onAnimationIteration={handleNextAnimation}
       >
-        <Icon size={24} strokeWidth={1.5} />
+        <Icon size={28} strokeWidth={2} />
       </div>
     </>
   );

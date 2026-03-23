@@ -62,8 +62,13 @@ export {
   InputGroupTextarea,
 } from './input-group';
 export { Input } from './input';
-export { Popover, PopoverContent, PopoverTrigger } from './popover';
-export { Progress } from './progress';
+export {
+  Progress,
+  ProgressTrack,
+  ProgressIndicator,
+  ProgressLabel,
+  ProgressValue,
+} from './progress';
 export {
   Select,
   SelectContent,
@@ -126,3 +131,11 @@ export {
   EmptyContent,
   EmptyMedia,
 } from './empty';
+export {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from './popover';

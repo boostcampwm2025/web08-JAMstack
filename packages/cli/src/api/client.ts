@@ -19,7 +19,14 @@ export class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`);
+      const errorData = await response.json().catch(() => null);
+
+      const message =
+        errorData?.error?.message ||
+        errorData?.message ||
+        `Request failed: ${response.statusText}`;
+
+      throw new Error(message);
     }
 
     return response.json();
@@ -37,13 +44,43 @@ export class ApiClient {
   async createCustomRoom(
     request: CreateCustomRoomRequest,
   ): Promise<CreateCustomRoomResponse> {
-    return this.request<CreateCustomRoomResponse>(
-      API_ENDPOINTS.ROOM.CREATE_CUSTOM,
+    const response = await fetch(
+      `${this.baseUrl}${API_ENDPOINTS.ROOM.CREATE_CUSTOM}`,
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(request),
       },
     );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+
+      const message =
+        errorData?.error?.message ||
+        errorData?.message ||
+        `Request failed: ${response.statusText}`;
+
+      throw new Error(message);
+    }
+
+    const data = await response.json();
+
+    // Extract token from Set-Cookie header
+    const setCookie = response.headers.get('set-cookie');
+    let token: string | undefined;
+
+    if (setCookie) {
+      // Parse: auth_ROOMCODE=TOKEN; ...
+      const match = setCookie.match(/auth_[^=]+=([^;]+)/);
+      if (match) {
+        token = match[1];
+      }
+    }
+
+    return { ...data, token };
   }
 
   async checkJoinable(roomCode: string): Promise<RoomJoinStatus> {

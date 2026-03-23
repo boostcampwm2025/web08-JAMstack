@@ -17,7 +17,13 @@ import {
   InputGroupButton,
 } from '@codejam/ui';
 import { ArrowLeft, Eye, EyeOff, Loader2, Minus, Plus } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import {
+  type ReactNode,
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+} from 'react';
 import { ErrorMessage } from './ErrorMessage';
 
 interface FormFieldProps {
@@ -68,6 +74,103 @@ function StepperField({
   isInvalid,
   errorMessage,
 }: StepperFieldProps) {
+  const intervalRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const decreaseButtonRef = useRef<HTMLButtonElement>(null);
+  const increaseButtonRef = useRef<HTMLButtonElement>(null);
+  const valueRef = useRef(value);
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+  const onDecreaseRef = useRef(onDecrease);
+  const onIncreaseRef = useRef(onIncrease);
+
+  // Keep refs in sync
+  useEffect(() => {
+    valueRef.current = value;
+    minRef.current = min;
+    maxRef.current = max;
+    onDecreaseRef.current = onDecrease;
+    onIncreaseRef.current = onIncrease;
+  }, [value, min, max, onDecrease, onIncrease]);
+
+  const startRepeating = useCallback((action: () => void) => {
+    action();
+    timeoutRef.current = window.setTimeout(() => {
+      intervalRef.current = window.setInterval(action, 100);
+    }, 500);
+  }, []);
+
+  const stopRepeating = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const decreaseBtn = decreaseButtonRef.current;
+
+    if (decreaseBtn) {
+      const handleDecreaseStart = (e: PointerEvent) => {
+        e.preventDefault();
+        startRepeating(() => {
+          if (valueRef.current !== '' && valueRef.current > minRef.current) {
+            onDecreaseRef.current();
+          } else {
+            stopRepeating();
+          }
+        });
+      };
+      const handleDecreaseEnd = () => {
+        stopRepeating();
+      };
+
+      decreaseBtn.addEventListener('pointerdown', handleDecreaseStart);
+      decreaseBtn.addEventListener('pointerup', handleDecreaseEnd);
+      decreaseBtn.addEventListener('pointercancel', handleDecreaseEnd);
+
+      return () => {
+        decreaseBtn.removeEventListener('pointerdown', handleDecreaseStart);
+        decreaseBtn.removeEventListener('pointerup', handleDecreaseEnd);
+        decreaseBtn.removeEventListener('pointercancel', handleDecreaseEnd);
+      };
+    }
+  }, [startRepeating, stopRepeating]);
+
+  useEffect(() => {
+    const increaseBtn = increaseButtonRef.current;
+
+    if (increaseBtn) {
+      const handleIncreaseStart = (e: PointerEvent) => {
+        e.preventDefault();
+        startRepeating(() => {
+          if (valueRef.current === '' || valueRef.current < maxRef.current) {
+            onIncreaseRef.current();
+          } else {
+            stopRepeating();
+          }
+        });
+      };
+      const handleIncreaseEnd = () => {
+        stopRepeating();
+      };
+
+      increaseBtn.addEventListener('pointerdown', handleIncreaseStart);
+      increaseBtn.addEventListener('pointerup', handleIncreaseEnd);
+      increaseBtn.addEventListener('pointercancel', handleIncreaseEnd);
+
+      return () => {
+        increaseBtn.removeEventListener('pointerdown', handleIncreaseStart);
+        increaseBtn.removeEventListener('pointerup', handleIncreaseEnd);
+        increaseBtn.removeEventListener('pointercancel', handleIncreaseEnd);
+      };
+    }
+  }, [startRepeating, stopRepeating]);
+
   return (
     <div className={className}>
       <FormField title={title} description={description}>
@@ -81,20 +184,22 @@ function StepperField({
               className="w-14 [appearance:textfield] text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <Button
+              ref={decreaseButtonRef}
               variant="outline"
               size="icon"
-              onClick={onDecrease}
               disabled={value === '' || value <= min}
               type="button"
+              style={{ touchAction: 'none' }}
             >
               <Minus className="size-4" />
             </Button>
             <Button
+              ref={increaseButtonRef}
               variant="outline"
               size="icon"
-              onClick={onIncrease}
               disabled={value !== '' && value >= max}
               type="button"
+              style={{ touchAction: 'none' }}
             >
               <Plus className="size-4" />
             </Button>
@@ -263,19 +368,33 @@ export function CustomRoomForm({
     }
   };
 
-  const decreaseMaxPts = () => {
-    const current = maxPtsInput === '' ? LIMITS.MIN_PTS : maxPtsInput;
-    const newVal = Math.max(current - 1, LIMITS.MIN_PTS);
-    setMaxPtsInput(newVal);
-    handleChange('maxPts', newVal);
-  };
+  const decreaseMaxPts = useCallback(() => {
+    setMaxPtsInput((prev) => {
+      const current = prev === '' ? LIMITS.MIN_PTS : prev;
+      if (current <= LIMITS.MIN_PTS) {
+        return current;
+      }
+      const newVal = Math.max(current - 1, LIMITS.MIN_PTS);
+      queueMicrotask(() => {
+        setCustomRoomConfig((c) => ({ ...c, maxPts: newVal }));
+      });
+      return newVal;
+    });
+  }, []);
 
-  const increaseMaxPts = () => {
-    const current = maxPtsInput === '' ? LIMITS.MIN_PTS : maxPtsInput;
-    const newVal = Math.min(current + 1, LIMITS.MAX_PTS);
-    setMaxPtsInput(newVal);
-    handleChange('maxPts', newVal);
-  };
+  const increaseMaxPts = useCallback(() => {
+    setMaxPtsInput((prev) => {
+      const current = prev === '' ? LIMITS.MIN_PTS : prev;
+      if (current >= LIMITS.MAX_PTS) {
+        return current;
+      }
+      const newVal = Math.min(current + 1, LIMITS.MAX_PTS);
+      queueMicrotask(() => {
+        setCustomRoomConfig((c) => ({ ...c, maxPts: newVal }));
+      });
+      return newVal;
+    });
+  }, []);
 
   const handleRoomPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleChange('roomPassword', e.target.value);

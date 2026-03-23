@@ -47,6 +47,7 @@
     "boring-avatars": "^2.0.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.561.0",
     "next-themes": "^0.4.6",

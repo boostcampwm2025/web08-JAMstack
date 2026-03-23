@@ -1,8 +1,4 @@
-import {
-  RadixPopover as Popover,
-  RadixPopoverTrigger as PopoverTrigger,
-  RadixPopoverContent as PopoverContent,
-} from '@codejam/ui';
+import { Popover, PopoverTrigger, PopoverContent } from '@codejam/ui';
 import { usePt } from '@/stores/pts';
 import { useRoomStore } from '@/stores/room';
 import { createAvatarGenerator, AvvvatarsProvider } from '@codejam/ui';
@@ -22,20 +18,22 @@ export function SidebarProfile() {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button
-          className="group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-transform outline-none active:scale-95"
-          title="설정 및 프로필"
-        >
-          <div className="relative">
-            <Avatar
-              id={me.ptHash}
-              size={40}
-              showOnline={me.presence === PRESENCE.ONLINE}
-            />
-          </div>
-        </button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <button
+            className="group relative flex h-12 w-12 items-center justify-center rounded-2xl outline-none"
+            title="설정 및 프로필"
+          >
+            <div className="transition-transform duration-150 ease-out group-hover:scale-[1.08] group-active:scale-[0.96]">
+              <Avatar
+                id={me.ptHash}
+                size={40}
+                showOnline={me.presence === PRESENCE.ONLINE}
+              />
+            </div>
+          </button>
+        }
+      />
       <PopoverContent
         side="right"
         align="end"

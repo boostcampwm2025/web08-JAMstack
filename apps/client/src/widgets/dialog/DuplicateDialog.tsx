@@ -1,12 +1,18 @@
 import {
-  RadixDialog as Dialog,
-  RadixDialogContent as DialogContent,
-  RadixDialogDescription as DialogDescription,
-  RadixDialogFooter as DialogFooter,
-  RadixDialogHeader as DialogHeader,
-  RadixDialogTitle as DialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@codejam/ui';
-import { Button } from '@codejam/ui';
+import { AlertCircle } from 'lucide-react';
 import { useFileStore } from '@/stores/file';
 import { extname, purename } from '@/shared/lib/file';
 import { uploadFile } from '@/shared/lib/file';
@@ -14,113 +20,145 @@ import { uploadFile } from '@/shared/lib/file';
 interface DuplicateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  filename: string;
+  onClick: () => void;
+  file?: File;
+  onOverwrite?: () => void;
+  onAutoRename?: (newName: string) => void;
 }
 
-export function DuplicateDialog({ open, onOpenChange }: DuplicateDialogProps) {
+export function DuplicateDialog({
+  open,
+  onOpenChange,
+  filename,
+  onClick,
+  file,
+  onOverwrite,
+  onAutoRename,
+}: DuplicateDialogProps) {
   const overwriteFile = useFileStore((state) => state.overwriteFile);
   const createFile = useFileStore((state) => state.createFile);
   const getFileId = useFileStore((state) => state.getFileId);
   const getFileNamesMap = useFileStore((state) => state.getFileNamesMap);
-  const tempFiles = useFileStore((state) => state.tempFiles);
-  const shiftTempFile = useFileStore((state) => state.shiftTempFile);
 
-  const fileName = tempFiles && tempFiles[0] ? tempFiles[0].name : '';
-
-  const checkRepeat = () => {
-    shiftTempFile();
-    if (tempFiles.length === 0) {
-      onOpenChange(false);
+  const generateAutoName = (): string => {
+    const fileNamesMap = getFileNamesMap();
+    if (!fileNamesMap) {
+      return filename;
     }
+
+    const ext = extname(filename);
+    const baseName = purename(filename).replace(/ \(\d+\)$/, '');
+
+    let maxNum = 0;
+    for (const name of Object.keys(fileNamesMap.toJSON())) {
+      if (extname(name) !== ext) continue;
+
+      const pure = purename(name);
+      if (pure === baseName) {
+        // baseName 자체가 존재 → 최소 (1)이 필요
+        maxNum = Math.max(maxNum, 0);
+        continue;
+      }
+
+      const escaped = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const match = pure.match(new RegExp(`^${escaped} \\((\\d+)\\)$`));
+      if (match) {
+        maxNum = Math.max(maxNum, parseInt(match[1]));
+      }
+    }
+
+    return `${baseName} (${maxNum + 1}).${ext}`;
   };
 
   const handleOverwrite = async () => {
-    const fileId = getFileId(tempFiles[0].name);
-    if (!fileId) {
+    if (onOverwrite) {
+      onOverwrite();
+      onOpenChange(false);
+      onClick();
       return;
     }
 
+    const fileId = getFileId(filename);
+    if (!fileId || !file) return;
+
     try {
-      const { content, type } = await uploadFile(tempFiles[0]);
+      const { content, type } = await uploadFile(file);
       overwriteFile(fileId, content, type);
-      checkRepeat();
+      onOpenChange(false);
+      onClick();
     } catch (error) {
       console.error('Failed to overwrite file:', error);
     }
   };
 
   const handleRename = async () => {
-    const fileId = getFileId(fileName);
+    const name = generateAutoName();
 
-    if (!fileId) {
+    if (onAutoRename) {
+      onAutoRename(name);
+      onOpenChange(false);
+      onClick();
       return;
     }
 
-    const newName = (): string => {
-      const fileNamesMap = getFileNamesMap();
-      if (!fileNamesMap) {
-        return fileName;
-      }
+    const fileId = getFileId(filename);
+    if (!fileId) return;
 
-      const entries: [string, string][] = Object.entries(
-        fileNamesMap.toJSON(),
-      ).filter(([name]) => {
-        const pure = purename(fileName);
-        const size = pure.length;
-        if (name.length < size) {
-          return false;
-        }
-        return name.substring(0, size).trim() === pure.trim();
-      });
-
-      const top = entries.sort((a, b) => b[1].localeCompare(a[1]))[0];
-      const ext = extname(top[0]);
-      const pure = purename(top[0]);
-      const fileMatch = pure.match(/.+\((\d+)\)$/i);
-
-      if (!fileMatch) {
-        return `${pure} (1).${ext}`;
-      }
-
-      return `${pure.replace(/\((\d+)\)$/i, `(${(parseInt(fileMatch[1]) + 1).toString()})`)}.${ext}`;
-    };
+    if (!file) return;
 
     try {
-      const { content, type } = await uploadFile(tempFiles[0]);
-      createFile(newName(), content, type);
-      checkRepeat();
+      const { content, type } = await uploadFile(file);
+      createFile(name, content, type);
+      onOpenChange(false);
+      onClick();
     } catch (error) {
-      console.error('Failed to rename file:', error);
+      console.error('Failed to create file with new name:', error);
     }
   };
 
-  const handleCancel = () => {
-    checkRepeat();
-  };
+  const expectedName = generateAutoName();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle>파일 중복</DialogTitle>
-          <DialogDescription>
-            <b>{fileName}</b>파일은 이미 존재합니다. 하시겠습니까?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="button" onClick={handleOverwrite}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent size="default">
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary">
+            <AlertCircle className="size-6" />
+          </AlertDialogMedia>
+          <AlertDialogTitle>파일 이름 중복</AlertDialogTitle>
+          <AlertDialogDescription className="flex flex-col gap-1">
+            <span>
+              <strong className="text-primary">{filename}</strong> 파일이 이미
+              존재해요.
+            </span>
+            <span className="text-muted-foreground">
+              기존 파일을 덮어쓸까요, 아니면 이름을 바꿔서 사본으로 저장할까요?
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel variant="outline">취소</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={handleOverwrite}>
             덮어쓰기
-          </Button>
-          <Button type="button" onClick={handleRename}>
-            이름변경
-          </Button>
-          <Button type="button" onClick={handleCancel}>
-            취소
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+          <Tooltip>
+            <TooltipTrigger
+              render={(props) => (
+                <AlertDialogAction {...props} onClick={handleRename}>
+                  사본으로 저장
+                </AlertDialogAction>
+              )}
+            />
+            <TooltipContent side="top">
+              <p>
+                새로운 파일명:{' '}
+                <span className="font-semibold">{expectedName}</span>
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

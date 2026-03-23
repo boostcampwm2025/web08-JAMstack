@@ -49,7 +49,9 @@ async function createRoom(
     });
 
     spinner.succeed(chalk.green('Custom room created!'));
-    return { roomCode: response.roomCode };
+    // response는 서버에서 { roomCode }만 반환
+    // 하지만 ApiClient가 Set-Cookie 헤더에서 token을 추출하여 { roomCode, token? }로 확장
+    return { roomCode: response.roomCode, token: (response as any).token };
   } else {
     const response = await client.createQuickRoom();
 
@@ -121,13 +123,16 @@ export const startCommand = new Command('start')
       const client = new ApiClient(config.serverUrl);
       const { roomCode, token } = await createRoom(client, options);
       displayRoomInfo(roomCode, options);
-      if (!options.custom) {
-        const roomUrl = `${config.clientUrl}${ROUTES.ROOM(roomCode)}`;
-        await openRoomInBrowser(roomUrl, options.browser !== false);
+
+      let roomUrl: string;
+      if (options.custom && token) {
+        // Custom room: use JOIN route with token to save cookie
+        roomUrl = `${config.clientUrl}${ROUTES.JOIN(roomCode)}?token=${token}`;
       } else {
-        const roomUrl = `${config.clientUrl}${ROUTES.JOIN(roomCode)}`;
-        await openRoomInBrowser(roomUrl, options.browser !== false);
+        // Quick room: direct to ROOM
+        roomUrl = `${config.clientUrl}${ROUTES.ROOM(roomCode)}`;
       }
+      await openRoomInBrowser(roomUrl, options.browser !== false);
     } catch (error) {
       handleError('Failed to create room', error);
     }

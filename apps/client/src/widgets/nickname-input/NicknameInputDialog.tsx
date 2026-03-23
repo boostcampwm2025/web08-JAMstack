@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { nicknameSchema } from '@codejam/common';
+import { LIMITS, nicknameSchema } from '@codejam/common';
 import {
-  RadixDialog as Dialog,
-  RadixDialogContent as DialogContent,
-  RadixDialogDescription as DialogDescription,
-  RadixDialogFooter as DialogFooter,
-  RadixDialogHeader as DialogHeader,
-  RadixDialogTitle as DialogTitle,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Label,
+  Input,
 } from '@codejam/ui';
-import { Button } from '@codejam/ui';
-import { RadixInput as Input } from '@codejam/ui';
-import { RadixLabel as Label } from '@codejam/ui';
 
 interface NicknameInputDialogProps {
   open: boolean;
@@ -25,72 +25,89 @@ export function NicknameInputDialog({
 }: NicknameInputDialogProps) {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
+  const [isValid, setIsValid] = useState(false);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
 
-    const trimmedNickname = nickname.trim();
+    if (!isValid) return;
 
-    // Zod 검증
-    const result = nicknameSchema.safeParse(trimmedNickname);
-
-    if (!result.success) {
-      const firstError = result.error.issues[0];
-      setError(firstError?.message || '닉네임을 확인해주세요.');
-      return;
-    }
-
-    setError('');
-    onConfirm(result.data);
+    onConfirm(nickname);
     setNickname('');
+    setIsValid(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // 최대 6자로 제한
-    if (value.length <= 6) {
-      setNickname(value);
-      setError(''); // 입력 중에는 에러 메시지 제거
+
+    setNickname(value);
+
+    if (!value.trim()) {
+      setError('');
+      setIsValid(false);
+      return;
+    }
+
+    const result = nicknameSchema.safeParse(value);
+
+    if (!result.success) {
+      const firstError = result.error.issues[0];
+      setError(firstError?.message || '닉네임 형식이 올바르지 않습니다.');
+      setIsValid(false);
+    } else {
+      setError('');
+      setIsValid(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && isValid && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>닉네임 입력</DialogTitle>
-            <DialogDescription>
-              방에 입장하기 위한 닉네임을 입력해주세요. (1-6자)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="nickname">닉네임</Label>
-              <Input
-                id="nickname"
-                value={nickname}
-                onChange={handleChange}
-                placeholder="닉네임을 입력하세요"
-                autoFocus
-                aria-invalid={!!error}
-                maxLength={6}
-                className="focus-visible:border-brand-blue focus-visible:ring-brand-blue/50"
-              />
-              {error && <p className="text-destructive text-sm">{error}</p>}
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <form onSubmit={handleSubmit}>
+        <AlertDialogContent className="sm:max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>닉네임 입력</AlertDialogTitle>
+            <AlertDialogDescription>
+              방에 입장하기 위한 닉네임을 입력해주세요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="grid gap-1">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="nickname" className="text-right">
+                닉네임
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="nickname"
+                  value={nickname}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="닉네임을 입력하세요"
+                  autoFocus
+                  maxLength={LIMITS.NICKNAME_MAX}
+                  aria-invalid={!!error}
+                />
+              </div>
+            </div>
+            <div className={`h-4 ${!error ? 'invisible' : ''}`}>
+              <p className="text-right text-[12px] text-red-500">{error}</p>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={!nickname.trim()}>
+
+          <AlertDialogFooter>
+            <Button type="submit" disabled={!isValid} onClick={handleSubmit}>
               입장하기
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </form>
+    </AlertDialog>
   );
 }

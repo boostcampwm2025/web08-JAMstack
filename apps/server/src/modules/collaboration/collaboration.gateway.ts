@@ -240,7 +240,7 @@ export class CollaborationGateway
   }
 
   /** C -> S 코드 실행 요청 */
-  @UseGuards(PermissionGuard, WsThrottlerGuard)
+  @UseGuards(WsThrottlerGuard)
   @Throttle({ default: { limit: EXECUTE_CODE_LIMIT, ttl: 60000 } })
   @SubscribeMessage(SOCKET_EVENTS.EXECUTE_CODE)
   async handleExecuteCode(

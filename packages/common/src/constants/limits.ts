@@ -2,7 +2,7 @@ export const LIMITS = {
   // Participant limits
   MAX_CAN_EDIT: 6,
   MAX_PTS: 150,
-  MIN_PTS: 1,
+  MIN_PTS: 2,
   PT_HASH_LENGTH: 4,
 
   // Room code

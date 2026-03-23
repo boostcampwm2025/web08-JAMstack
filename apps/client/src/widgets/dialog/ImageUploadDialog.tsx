@@ -1,12 +1,13 @@
 import {
-  RadixDialog as Dialog,
-  RadixDialogContent as DialogContent,
-  RadixDialogFooter as DialogFooter,
-  RadixDialogHeader as DialogHeader,
-  RadixDialogTitle as DialogTitle,
-  RadixDialogDescription as DialogDescription,
   Button,
-  RadixDialogClose as DialogClose,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@codejam/ui';
 import { useState } from 'react';
 
@@ -74,127 +75,80 @@ export function ImageUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
-        <Header />
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={handleSubmit} className="contents">
+          <DialogHeader>
+            <DialogTitle>이미지 공유</DialogTitle>
+            <DialogDescription>
+              이미지 URL을 사용해 파일을 공유하면 파일 목록에서 이미지를 확인할
+              수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <FileNameInput value={name} onChange={setName} />
-          <ImageUrlInput value={url} onChange={setUrl} />
-          <CheckImageButton
-            isChecking={isChecking}
-            onClick={handleCheckImage}
-          />
-          <ErrorMessage error={error} />
-          <Preview url={previewUrl} />
-          <Footer disabled={!previewUrl} />
+          <div className="grid gap-4">
+            <div className="grid grid-cols-4 items-center gap-2">
+              <Label htmlFor="image-name" className="text-right">
+                파일 이름
+              </Label>
+              <Input
+                id="image-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="example.png"
+                className="col-span-3"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image-url" className="text-right">
+                이미지 URL
+              </Label>
+              <Input
+                id="image-url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/image"
+                className="col-span-3"
+              />
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleCheckImage}
+              disabled={isChecking}
+              variant="secondary"
+              className="w-full"
+            >
+              {isChecking ? '이미지 확인 중 …' : '이미지 확인'}
+            </Button>
+
+            {error && (
+              <p className="text-center text-sm text-red-500">{error}</p>
+            )}
+
+            {previewUrl && (
+              <img
+                src={previewUrl}
+                alt="preview"
+                className="max-h-48 w-full rounded-md border object-contain"
+              />
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              취소
+            </Button>
+            <Button type="submit" disabled={!previewUrl}>
+              공유
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Header() {
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>이미지 공유</DialogTitle>
-      </DialogHeader>
-      <DialogDescription>
-        이미지 URL을 사용해 파일을 공유하면 파일 목록에서 이미지를 확인할 수
-        있습니다.
-      </DialogDescription>
-    </>
-  );
-}
-
-function FileNameInput({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      <label className="text-sm font-medium">파일 이름</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="example.png"
-        className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-        autoFocus
-      />
-    </div>
-  );
-}
-
-function ImageUrlInput({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      <label className="text-sm font-medium">이미지 URL</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="https://example.com/image"
-        className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 text-sm"
-      />
-    </div>
-  );
-}
-
-function CheckImageButton({
-  isChecking,
-  onClick,
-}: {
-  isChecking: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <Button
-      type="button"
-      onClick={onClick}
-      disabled={isChecking}
-      variant="secondary"
-    >
-      {isChecking ? '이미지 확인 중…' : '이미지 확인'}
-    </Button>
-  );
-}
-
-function ErrorMessage({ error }: { error: string | null }) {
-  if (!error) return null;
-  return <p className="text-sm text-red-500">{error}</p>;
-}
-
-function Preview({ url }: { url: string | null }) {
-  if (!url) return null;
-
-  return (
-    <img
-      src={url}
-      alt="preview"
-      className="max-h-48 w-full rounded-md border object-contain"
-    />
-  );
-}
-
-function Footer({ disabled }: { disabled: boolean }) {
-  return (
-    <DialogFooter>
-      <DialogClose asChild>
-        <Button type="button" variant="ghost">
-          취소
-        </Button>
-      </DialogClose>
-      <Button type="submit" disabled={disabled}>
-        공유
-      </Button>
-    </DialogFooter>
   );
 }

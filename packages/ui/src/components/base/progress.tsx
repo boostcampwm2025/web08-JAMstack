@@ -4,10 +4,15 @@ import { cn } from '../../lib/utils';
 
 function Progress({
   className,
+  trackClassName,
+  indicatorClassName,
   children,
   value,
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressPrimitive.Root.Props & {
+  trackClassName?: string;
+  indicatorClassName?: string;
+}) {
   return (
     <ProgressPrimitive.Root
       value={value}
@@ -16,8 +21,8 @@ function Progress({
       {...props}
     >
       {children}
-      <ProgressTrack>
-        <ProgressIndicator />
+      <ProgressTrack className={trackClassName}>
+        <ProgressIndicator className={indicatorClassName} />
       </ProgressTrack>
     </ProgressPrimitive.Root>
   );

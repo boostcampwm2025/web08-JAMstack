@@ -1,4 +1,9 @@
-import { Doc as YDoc } from 'yjs';
+import {
+  Doc as YDoc,
+  applyUpdate,
+  encodeStateAsUpdate,
+  encodeStateVector,
+} from 'yjs';
 import { createDecoder } from 'lib0/decoding';
 import { createEncoder, toUint8Array } from 'lib0/encoding';
 import { readSyncMessage, writeUpdate } from 'y-protocols/sync';
@@ -47,10 +52,7 @@ export class YDocManager {
    * Handles Y.js sync protocol
    */
   applyUpdate(message: Uint8Array, origin: unknown): Uint8Array | null {
-    const update =
-      message instanceof Uint8Array ? message : new Uint8Array(message);
-
-    const decoder = createDecoder(update);
+    const decoder = createDecoder(message);
     const encoder = createEncoder();
 
     readSyncMessage(decoder, encoder, this.yDoc, origin);
@@ -114,6 +116,46 @@ export class YDocManager {
    */
   isInitialDocLoaded(): boolean {
     return this.initialDocLoaded;
+  }
+
+  /**
+   * Create Y.Doc from snapshot and updates
+   */
+  static createDoc(snapshot: Uint8Array, updates: Uint8Array[]): YDoc {
+    const doc = new YDoc();
+    applyUpdate(doc, snapshot);
+    updates.forEach((update) => applyUpdate(doc, update));
+    return doc;
+  }
+
+  /**
+   * Get the state vector for a document
+   */
+  getStateVector(doc: YDoc = this.yDoc): Uint8Array {
+    return encodeStateVector(doc);
+  }
+
+  /**
+   * Encode diff against a remote document
+   */
+  encodeDiffAgainst(other: YDoc): Uint8Array {
+    return encodeStateAsUpdate(this.yDoc, this.getStateVector(other));
+  }
+
+  /**
+   * Encode diff from a remote document
+   */
+  encodeDiffFrom(other: YDoc): Uint8Array {
+    return encodeStateAsUpdate(other, this.getStateVector(this.yDoc));
+  }
+
+  /**
+   * Encode a sync update message from a state update
+   */
+  encodeSyncUpdate(update: Uint8Array): Uint8Array {
+    const encoder = createEncoder();
+    writeUpdate(encoder, update);
+    return toUint8Array(encoder);
   }
 
   /**
