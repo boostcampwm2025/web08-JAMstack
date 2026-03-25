@@ -1,8 +1,14 @@
-# Oracle VM 수동 배포용 통합 compose (프로덕션/스테이징·DB·Redis·Piston·Caddy 등).
-# 이미지는 호스트 빌드 산출물을 COPY하는 apps/server/Dockerfile 기준 — CI 레지스트리 빌드와는 별 트랙으로 두었음.
+# ==============================================================================
+# [주의] 수동 실행 및 로컬 개발 전용 (MANUAL USE ONLY) (오라클 서버 수동 배포에 사용되었습니다)
+# ------------------------------------------------------------------------------
+# 1. 이 파일은 GitHub Actions 자동 배포(OCIR) 파이프라인에 사용되지 않습니다.
+# 2. 서버 배포는 cd-*.yml 워크플로우를 통해 'docker run' 방식으로 직접 수행됩니다.
+# 3. 로컬 테스트나 서버에서 수동으로 컨테이너를 올릴 때만 수정/사용하세요.
+# ==============================================================================
 
 services:
   server-prod:
+    # 수동 배포 기본 이미지 태그(호스트에서 compose up 시 사용)
     image: codejam-server:production
     build:
       context: .
@@ -36,6 +42,7 @@ services:
       - codejam-net
 
   server-staging:
+    # 수동 배포 기본 이미지 태그(호스트에서 compose up 시 사용)
     image: codejam-server:staging
     build:
       context: .
@@ -130,7 +137,8 @@ services:
       - '443:443'
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/root/.local/share/caddy
+      - caddy_data:/data
+      - caddy_config:/config
     command: ['caddy', 'run', '--config', '/etc/caddy/Caddyfile']
     depends_on:
       - server-prod
@@ -144,6 +152,8 @@ services:
 
 volumes:
   caddy_data:
+    driver: local
+  caddy_config:
     driver: local
   redis_data:
     driver: local
