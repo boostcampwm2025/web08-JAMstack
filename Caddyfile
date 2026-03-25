@@ -1,7 +1,7 @@
 {
     # Let's Encrypt (프론트는 Vercel www.codejam.app, API만 이 서버에서 처리)
     email {env.ACME_EMAIL}
-    acme_ca https://acme-v02.api.letsencrypt.org/directory
+    acme_ca https://acme.zerossl.com/v2/DV90
 }
 
 # 프로덕션 API → server-prod (DNS: api.codejam.app A → Oracle VM)
