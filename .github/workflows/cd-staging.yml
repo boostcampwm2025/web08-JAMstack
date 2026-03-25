@@ -144,7 +144,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/server/Dockerfile
+          file: ./apps/server/Dockerfile.ci
           push: true
           tags: |
             ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging
@@ -152,14 +152,14 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging
           cache-to: type=inline
 
-      - name: Deploy to NCP
+      - name: Deploy to Oracle VM
         if: steps.changes.outputs.server == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USERNAME }}
-          key: ${{ secrets.NCP_SSH_KEY }}
-          port: ${{ secrets.NCP_PORT }}
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USERNAME }}
+          key: ${{ secrets.OCI_VM_SSH_KEY }}
+          port: ${{ secrets.OCI_VM_PORT }}
           script: |
             docker login -u ${{ secrets.OCIR_USERNAME }} -p ${{ secrets.OCIR_AUTH_TOKEN }} ${{ secrets.OCIR_REGION_KEY }}.ocir.io
             docker pull ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging-${{ github.sha }}
@@ -168,6 +168,7 @@ jobs:
             docker run -d \
               --name server-staging \
               --restart unless-stopped \
+              --network codejam_codejam-net \
               -p 3001:3000 \
               -p 9091:9091 \
               --env-file /root/.env.staging \
