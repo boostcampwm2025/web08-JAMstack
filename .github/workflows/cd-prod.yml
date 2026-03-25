@@ -95,6 +95,8 @@ jobs:
         with:
           context: .
           file: ./apps/server/Dockerfile.ci
+          # Oracle VM이 ARM64라서 arm64 이미지를 반드시 푸시해야 함
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:production
@@ -111,19 +113,24 @@ jobs:
           key: ${{ secrets.OCI_VM_SSH_KEY }}
           port: ${{ secrets.OCI_VM_PORT }}
           script: |
-            docker login -u ${{ secrets.OCIR_USERNAME }} -p ${{ secrets.OCIR_AUTH_TOKEN }} ${{ secrets.OCIR_REGION_KEY }}.ocir.io
-            docker pull ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:prod-${{ github.sha }}
-            docker stop server-prod || true
-            docker rm server-prod || true
-            docker run -d \
+            set -e
+            # ubuntu 유저는 /root/.env.* 를 직접 읽을 수 없어서, 배포 시 env 파일은 /home/ubuntu 로 복사해서 사용
+            sudo test -f /home/ubuntu/.env.prod || sudo cp /root/.env.prod /home/ubuntu/.env.prod
+            sudo chmod 600 /home/ubuntu/.env.prod
+
+            sudo docker login -u ${{ secrets.OCIR_USERNAME }} -p ${{ secrets.OCIR_AUTH_TOKEN }} ${{ secrets.OCIR_REGION_KEY }}.ocir.io
+            sudo docker pull ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:prod-${{ github.sha }}
+            sudo docker stop server-prod || true
+            sudo docker rm server-prod || true
+            sudo docker run -d \
               --name server-prod \
               --restart unless-stopped \
               --network codejam_codejam-net \
               -p 3000:3000 \
               -p 9091:9091 \
-              --env-file /root/.env.prod \
+              --env-file /home/ubuntu/.env.prod \
               ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:prod-${{ github.sha }}
-            docker image prune -af
+            sudo docker image prune -af
 
       - name: Notify Slack (Production Deploy)
         uses: slackapi/slack-github-action@v2
