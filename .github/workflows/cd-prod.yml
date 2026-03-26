@@ -94,7 +94,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/server/Dockerfile
+          file: ./apps/server/Dockerfile.ci
+          # Oracle VM이 ARM64라서 arm64 이미지를 반드시 푸시해야 함
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:production
@@ -103,25 +105,32 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:production
           cache-to: type=inline
 
-      - name: Deploy to NCP
+      - name: Deploy to Oracle VM
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USERNAME }}
-          key: ${{ secrets.NCP_SSH_KEY }}
-          port: ${{ secrets.NCP_PORT }}
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USERNAME }}
+          key: ${{ secrets.OCI_VM_SSH_KEY }}
+          port: ${{ secrets.OCI_VM_PORT }}
           script: |
-            docker login -u ${{ secrets.NCP_ACCESS_KEY }} -p ${{ secrets.NCP_SECRET_KEY }} ${{ secrets.NCP_REGISTRY_URL }}
-            docker pull ${{ secrets.NCP_REGISTRY_URL }}/server:prod-${{ github.sha }}
-            docker stop server-prod || true
-            docker rm server-prod || true
-            docker run -d \
+            set -e
+            # ubuntu 유저는 /root/.env.* 를 직접 읽을 수 없어서, 배포 시 env 파일은 /home/ubuntu 로 복사해서 사용
+            sudo test -f /home/ubuntu/.env.prod || sudo cp /root/.env.prod /home/ubuntu/.env.prod
+            sudo chmod 600 /home/ubuntu/.env.prod
+
+            sudo docker login -u ${{ secrets.OCIR_USERNAME }} -p ${{ secrets.OCIR_AUTH_TOKEN }} ${{ secrets.OCIR_REGION_KEY }}.ocir.io
+            sudo docker pull ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:prod-${{ github.sha }}
+            sudo docker stop server-prod || true
+            sudo docker rm server-prod || true
+            sudo docker run -d \
               --name server-prod \
               --restart unless-stopped \
+              --network codejam_codejam-net \
               -p 3000:3000 \
-              --env-file /root/.env.prod \
-              ${{ secrets.NCP_REGISTRY_URL }}/server:prod-${{ github.sha }}
-            docker image prune -af
+              -p 9091:9091 \
+              --env-file /home/ubuntu/.env.prod \
+              ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:prod-${{ github.sha }}
+            sudo docker image prune -af
 
       - name: Notify Slack (Production Deploy)
         uses: slackapi/slack-github-action@v2
