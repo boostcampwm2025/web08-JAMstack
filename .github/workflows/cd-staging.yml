@@ -177,7 +177,7 @@ jobs:
               --restart unless-stopped \
               --network codejam_codejam-net \
               -p 3001:3000 \
-              -p 9091:9091 \
+              -p 9092:9091 \
               --env-file /home/ubuntu/.env.staging \
               ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging-${{ github.sha }}
             sudo docker image prune -af
