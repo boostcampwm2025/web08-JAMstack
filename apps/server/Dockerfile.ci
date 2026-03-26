@@ -1,0 +1,47 @@
+FROM node:22-slim AS builder
+
+RUN corepack enable && corepack prepare pnpm@10.26.0 --activate
+
+WORKDIR /app
+
+# Install dependencies first for better layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/server/package.json ./apps/server/package.json
+COPY packages/common/package.json ./packages/common/package.json
+
+RUN pnpm install --frozen-lockfile
+
+# Copy source and build only required packages
+COPY apps/server ./apps/server
+COPY packages/common ./packages/common
+
+RUN pnpm --filter @codejam/common build && pnpm --filter server build
+
+
+FROM node:22-slim
+
+# Security: run as non-root
+RUN useradd -m -u 1001 appuser
+
+WORKDIR /app
+
+# Copy only runtime artifacts
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/server/node_modules ./apps/server/node_modules
+COPY --from=builder /app/packages/common/node_modules ./packages/common/node_modules
+COPY --from=builder /app/packages/common/package.json ./packages/common/package.json
+COPY --from=builder /app/packages/common/dist ./packages/common/dist
+COPY --from=builder /app/apps/server/dist ./apps/server/dist
+COPY --from=builder /app/apps/server/package.json ./apps/server/package.json
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
+ENV NODE_ENV=production
+
+EXPOSE 3000 9091
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
+
+CMD ["node", "apps/server/dist/main.js"]

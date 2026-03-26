@@ -144,7 +144,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/server/Dockerfile
+          file: ./apps/server/Dockerfile.ci
+          # Oracle VM이 ARM64라서 arm64 이미지를 반드시 푸시해야 함
+          platforms: linux/arm64
           push: true
           tags: |
             ${{ secrets.NCP_REGISTRY_URL }}/server:staging
@@ -152,27 +154,33 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.NCP_REGISTRY_URL }}/server:staging
           cache-to: type=inline
 
-      - name: Deploy to NCP
+      - name: Deploy to Oracle VM
         if: steps.changes.outputs.server == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.NCP_HOST }}
-          username: ${{ secrets.NCP_USERNAME }}
-          key: ${{ secrets.NCP_SSH_KEY }}
-          port: ${{ secrets.NCP_PORT }}
+          host: ${{ secrets.OCI_VM_HOST }}
+          username: ${{ secrets.OCI_VM_USERNAME }}
+          key: ${{ secrets.OCI_VM_SSH_KEY }}
+          port: ${{ secrets.OCI_VM_PORT }}
           script: |
-            docker login -u ${{ secrets.NCP_ACCESS_KEY }} -p ${{ secrets.NCP_SECRET_KEY }} ${{ secrets.NCP_REGISTRY_URL }}
-            docker pull ${{ secrets.NCP_REGISTRY_URL }}/server:staging-${{ github.sha }}
-            docker stop server-staging || true
-            docker rm server-staging || true
-            docker run -d \
+            set -e
+            # ubuntu 유저는 /root/.env.* 를 직접 읽을 수 없어서, 배포 시 env 파일은 /home/ubuntu 로 복사해서 사용
+            sudo test -f /home/ubuntu/.env.staging || sudo cp /root/.env.staging /home/ubuntu/.env.staging
+            sudo chmod 600 /home/ubuntu/.env.staging
+
+            sudo docker login -u ${{ secrets.OCIR_USERNAME }} -p ${{ secrets.OCIR_AUTH_TOKEN }} ${{ secrets.OCIR_REGION_KEY }}.ocir.io
+            sudo docker pull ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging-${{ github.sha }}
+            sudo docker stop server-staging || true
+            sudo docker rm server-staging || true
+            sudo docker run -d \
               --name server-staging \
               --restart unless-stopped \
+              --network codejam_codejam-net \
               -p 3001:3000 \
               -p 9091:9091 \
-              --env-file /root/.env.staging \
-              ${{ secrets.NCP_REGISTRY_URL }}/server:staging-${{ github.sha }}
-            docker image prune -af
+              --env-file /home/ubuntu/.env.staging \
+              ${{ secrets.OCIR_REGION_KEY }}.ocir.io/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}:staging-${{ github.sha }}
+            sudo docker image prune -af
 
       - name: Notify Slack (Server Deploy)
         if: steps.changes.outputs.server == 'true'
