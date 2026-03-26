@@ -80,13 +80,11 @@
 ### 2️⃣ Powerful Collaboration
 
 - **동시 편집**: **Yjs (CRDT)** 기술 적용, 충돌 없는 자연스러운 코드 병합
-- **커서 추적 (Follow Mode)**: 팀원 아바타 클릭 시 해당 화면과 커서 위치 실시간 동기화
 - **권한 관리**: 방장(Host), 편집자(Editor, 최대 6명), 관전자(Viewer) 역할 분리
 
 ### 3️⃣ Fast & Focused Editor
 
 - **경량 에디터**: **CodeMirror 6** 기반, 모바일/태블릿에서도 부드러운 퍼포먼스
-- **스냅샷 관리**: 편집 내역 저장 및 시점 복구 (History Management)
 - **자동 만료**: 세션 생성 24시간 후 자동 파기 (Security)
 
 ---
@@ -118,4 +116,5 @@
 
 ## 아키텍처 다이어그램
 
-![infra-architecture](https://github.com/user-attachments/assets/98408aa5-556e-4969-8024-54875913e885)
+<img width="3101" height="2053" alt="image" src="https://github.com/user-attachments/assets/9c66a7ba-6563-4450-8c2e-631f65fa4995" />
+
